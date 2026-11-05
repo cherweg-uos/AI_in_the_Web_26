@@ -4,3 +4,6 @@ for hex in range(0x0001F0A1,0x0001F0DF):
         deck.append(chr(hex))
 print(deck)
 print(len(deck))
+
+#brauchen wir das gerade noch weil wir arbeiten ja nicht mehr mit hex
+#und wohin wird das geprintet 

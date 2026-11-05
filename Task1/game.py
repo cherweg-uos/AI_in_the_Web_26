@@ -1,16 +1,17 @@
 import streamlit as st
 import random
 
+#Tab name 
 st.header("Guessing Game")
 
-# create list of all cards using unicode characters
+# create list of all cards using unicode characters/ wir verwenden keine mehr right? 
 deck = []
 for hex in range(0x0001F0A1,0x0001F0DF):
     if (hex % 16) not in [0, 12, 15]: # who TF put mahjong tiles between the playing cards?
         deck.append(chr(hex))
 
 
-# create a new random number if we don't have one yet
+# create a new random number if we don't have one yet / und ein knopf wird erstelt 
 resetbuton = st.button("Reset", width="stretch", shortcut="Space")
 
 if ("number" not in st.session_state) or resetbuton:
