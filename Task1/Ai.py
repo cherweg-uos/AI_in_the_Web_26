@@ -6,17 +6,10 @@ import os
 st.set_page_config(page_title="Meine KI-App")
 
 # ── ask for API Key, stop if not yet provided  ────────────────────────────────────────────
-with st.sidebar:
-    api_key = st.text_input(
-        "UOS AI API-Key",
-        type="password",
-        key="uos_api_key",
-        placeholder="sk-...",
-    ).strip()
 
-if not api_key:
-    st.info("Please enter your Uni Osnabrück API key. If you don't have one, you can obtain it from https://ai-keys.uni-osnabrueck.de.")
-    st.stop()
+
+
+
 
 # pass the entered key
 client = OpenAI(
@@ -45,12 +38,9 @@ if st.button("Submit", disabled=not prompt.strip()):
             response = client.chat.completions.create(
                 model="google/gemma-4-E4B-it",
                 messages=[
-                   {"role": "developer", "content": "Antworte in einem satzt"},
-                   {"role": "user", "content": [
-                       {"type": "image_url", "image_url": {"url": f"data:image/svg+xml;base64,{base64_image}"}
-                       }
-                   ],
-                   }
+                   {"role": "developer", "content": "Antworte mit Ja und Nein.Gebe dazu immer noch in anführungszeichen ein zitat aus was der user gefragt hat. Es geht um normales 52Karten Deck. Falls nach der Farbe gefragt wird schau nach den Farben die nicht weiß sind.Es gibt nur Rote und Schwartzte Karten.Falls du dir nicht sicher bisst denke länger nahc und antworte nur mit ja oder Nein"},
+                   {"role": "user", "content": [{"type": "image_url", "image_url": {"url": f"data:image/svg+xml;base64,{base64_image}"}}],},
+                   {"role": "user", "content": prompt}
                 ],
             )
 

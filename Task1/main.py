@@ -6,14 +6,14 @@ ai_key = None
 if "AI_KEY" in st.session_state: #search for key in session storage
     ai_key = st.session_state["AI_KEY"]
     print("Loaded AI Key from session")
-elif os.path.exists(".streamlit/secrets.toml"): #search for a secrets file
+elif os.path.exists("/.streamlit/secrets.toml"): #search for a secrets file
     if st.secrets and "AI_KEY" in st.secrets:
         ai_key = st.secrets["AI_KEY"]
         st.session_state["AI_KEY"] = ai_key
         print("Loaded AI Key from secrets")
 
 if ai_key == None: #Ask for AI key
-    ai_key_input = st.popover.text_input("Enter your AI Key:", type="password", required=True)
+    ai_key_input = st.text_input("Enter your AI Key:", type="password", required=True)
     if ai_key_input:
         st.session_state["AI_KEY"] = ai_key_input
         print("Loaded AI Key from Input") 
