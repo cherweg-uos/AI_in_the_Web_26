@@ -20,7 +20,7 @@ if ("number" not in st.session_state) or resetbuton:
     
 if st.session_state["debug"]:
     st.text(f"The number is {st.session_state['number']}")
-    st.image({"cards/" + st.session_state["SVGList"][st.session_state["number"]]})
+    st.image({"Task1/cards/" + st.session_state["SVGList"][st.session_state["number"]]}) #dateinamenliste[zufallsnummer]
 
 with st.form("number_form"):
     guess = st.text_input("Enter Question or a Guess")
