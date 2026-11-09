@@ -6,7 +6,7 @@ ai_key = None
 if "AI_KEY" in st.session_state: #search for key in session storage
     ai_key = st.session_state["AI_KEY"]
     print("Loaded AI Key from session")
-elif os.path.exists("/.streamlit/secrets.toml"): #search for a secrets file
+elif os.path.exists(".streamlit/secrets.toml"): #search for a secrets file
     if st.secrets and "AI_KEY" in st.secrets:
         ai_key = st.secrets["AI_KEY"]
         st.session_state["AI_KEY"] = ai_key

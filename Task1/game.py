@@ -7,7 +7,7 @@ import os
 # pass the entered key
 client = OpenAI(
     base_url="https://litellm.uni-osnabrueck.de/v1",
-    #api_key= "sk-F8IgUv-UF6tYpX_dxqxMig"
+    api_key= st.session_state["AI_KEY"]
 )
 #das gibt den image path an 
 image_path = "Task1/cards/2_of_clubs.png" 
@@ -22,13 +22,6 @@ base64_image = encode_image(image_path)
 
 #Tab name 
 st.header("Guessing Game")
-
-# create list of all cards using unicode characters/ wir verwenden keine mehr right? 
-deck = []
-for hex in range(0x0001F0A1,0x0001F0DF):
-    if (hex % 16) not in [0, 12, 15]: # who TF put mahjong tiles between the playing cards?
-        deck.append(chr(hex))
-
 
 # create a new random number if we don't have one yet / und ein knopf wird erstelt 
 resetbuton = st.button("Reset", width="stretch", shortcut="Space")
