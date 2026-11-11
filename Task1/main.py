@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 
-
 ai_key = None
 if "AI_KEY" in st.session_state: #search for key in session storage
     ai_key = st.session_state["AI_KEY"]

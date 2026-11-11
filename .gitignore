@@ -165,4 +165,5 @@ cython_debug/
 # Streamlit secrets for Development, never commit
 .streamlit/secrets.toml
 
-
+# Visual Studio Code Stuff
+.vscode/
