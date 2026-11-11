@@ -3,6 +3,7 @@ from openai import OpenAI, AuthenticationError, OpenAIError
 import random
 import base64
 import os 
+import json 
 
 # pass the entered key
 client = OpenAI(
@@ -57,13 +58,13 @@ if st.button("Submit", disabled=not prompt.strip()):
             response = client.chat.completions.create(
                 model="google/gemma-4-E4B-it",
                 messages=[
-                   {"role": "developer", "content": "Antworte mit Ja und Nein. Es geht um normales 52Karten Deck. Falls nach der Farbe gefragt wird schau nach den Farben die nicht weiß sind.Es gibt nur Rote und Schwartzte Karten.Falls du dir nicht sicher bisst denke länger nahc und antworte nur mit ja oder Nein"},
+                   {"role": "developer", "content": "Es geht um normales 52Karten Deck. Falls nach der Farbe gefragt wird schau nach den Farben die nicht weiß sind.Es gibt nur Rote und Schwartzte Karten.Falls du dir nicht sicher bisst denke länger nahc und antworte nur mit ja oder Nein.Gebe als antwort eine Json aus. In dieser Speicherst du deine Ja nein Antwort unter Antwort. Der user soll die Karte mit Zahl/symbol eraten z.B 2 Karo oder Herz König."},
                    {"role": "user", "content": [{"type": "image_url", "image_url": {"url": f"data:image/svg+xml;base64,{base64_image}"}}],},
                    {"role": "user", "content": prompt}
                 ],
-            )
+                response_format={"type": "json_object"})
 
-        st.write(response.choices[0].message.content)
+        st.write(json.loads( response.choices[0].message.content))
     
     except AuthenticationError:
         st.error("API was not accept. Please check it.")
