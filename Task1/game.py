@@ -86,6 +86,7 @@ if st.button("Submit", disabled=not prompt.strip()):
         st.session_state["quality"] = ai_data.get("quality")
         if st.session_state["debug"]:
             st.write(ai_data)
+        st.write(ai_data["yn_response"])
     
     except AuthenticationError:
         st.error("API was not accept. Please check it.")
@@ -110,6 +111,11 @@ if "clicked" not in st.session_state:
 # Submit buton displaying selected card
 submit_buton_text = f"Submit **{st.session_state["cards_names"][st.session_state["clicked"]]}** as final guess" if st.session_state["clicked"] > -1 else "No Card Selected"
 submitted = st.button(submit_buton_text, type="primary", disabled=(st.session_state["clicked"] <= -1), width="stretch")
+ 
+if "loose" not in st.session_state:
+    st.session_state["loose"] = 0
+if "Wins" not in st.session_state:
+    st.session_state["Wins"] = 0 
 
 if submitted:
     st.session_state["last_guess"] = st.session_state["clicked"]
@@ -117,6 +123,11 @@ if submitted:
     # Run your calculation or other action here.
     if st.session_state["last_guess"] == st.session_state['number']:
         st.success("Yeah! You did it")
+        st.balloons()
         del st.session_state['number']
+        st.session_state["Wins"] = st.session_state["Wins"] + 1
     else:
         st.error("Oh no. The Card is wrong.")
+        st.session_state["loose"] = st.session_state["loose"] + 1 
+      
+        
