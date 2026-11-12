@@ -7,10 +7,6 @@ st.set_page_config(page_title="Meine KI-App")
 
 # ── ask for API Key, stop if not yet provided  ────────────────────────────────────────────
 
-
-
-
-
 # pass the entered key
 client = OpenAI(
     base_url="https://litellm.uni-osnabrueck.de/v1",

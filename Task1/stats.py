@@ -1,13 +1,14 @@
 import streamlit as st
+import pandas as pd
 
-#gibt oben beim tab den Namen
+#gibt oben beim tab den Namen #nope gibt einfach nur überschrift, name ist in main.py
 st.header("Statistics")
 
-#debugtoggel wird definiert und ein toggel wird eingeführt 
-debugtoggle = st.toggle("Activate Debug", st.session_state["debug"])
-#und es wird der state in debug gespeichert
-st.session_state["debug"] = debugtoggle
+df = pd.DataFrame(, columns=["Round",
+                            "User Prompt",
+                            "Possile Cards",
+                            "Impossible Cards",
+                            "Entropy",
+                            "Information Gain",
+                            "Quality of Guess"])
 
-#debugtoggel scheint es zu sein wenn es na ist ? 
-if debugtoggle:
-    st.write("Debug activated!")
