@@ -34,20 +34,39 @@ if st.session_state["debug"]:
     st.text(f"The number is #{st.session_state['number']}, which is \"{st.session_state["cards_names"][st.session_state["number"]]}\"")
     st.image(st.session_state["cards_paths"][st.session_state["number"]], width=250) #dateipfadliste[zufallsnummer]
 
+
+q_idx, p_cards, i_cards = 0, st.session_state["cards_names"], []
 st.subheader("Ask a LLM for hints")
 prompt = st.text_area("Question to ask:")
 #abrufen von base64 image 
-base64_image = st.session_state["cards_base64"][st.session_state["number"]] 
+base64_image = st.session_state["cards_base64"][st.session_state["number"]]
 if st.button("Submit", disabled=not prompt.strip()):
     try:
         with st.spinner("Answer is being created …"):
             response = client.chat.completions.create(
                 model="google/gemma-4-E4B-it",
-                messages=[
-                   {"role": "developer", "content": "Es geht um normales 52Karten Deck. Falls nach der Farbe gefragt wird schau nach den Farben die nicht weiß sind.Es gibt nur Rote und Schwartzte Karten.Falls du dir nicht sicher bisst denke länger nahc und antworte nur mit ja oder Nein.Gebe als antwort eine Json aus. In dieser Speicherst du deine Ja nein Antwort unter Antwort. Der user soll die Karte mit Zahl/symbol eraten z.B 2 Karo oder Herz König."},
-                   {"role": "user", "content": [{"type": "image_url", "image_url": {"url": f"data:image/svg+xml;base64,{base64_image}"}}],},
-                   {"role": "user", "content": prompt}
-                ],
+                messages=[{"role": "developer", "content": f"""
+                You are responsible for answering the user questions.
+                The user has to guess a random playing card out of a french 52 card deck.
+                The target card the user is trying to find is provided in the image in this conversation.
+                Current Game State:
+                - Question Number: {q_idx}
+                - Possible Cards: {p_cards}
+                - Impossible Cards: {i_cards}
+
+                Try to answer in an efficient and analytical manner. If something is not clear or concise, instead of guessing just stop and state so in the remarks. 
+
+                For your responses always return a JSON object with the following keys:
+                1. "yn_response" : A Yes/No response to the user Question.
+                2. "remark" : A sarcastic comment of your choice. If you encounter any errors or are missing things, this is where to put them.
+                3. "p_cards" : Updated list of potential Cards based on the answer.
+                4. "i_cards" : Updated list of all impossible Cards that are now excluded by the answer.
+                5. "entropy" : The new entropy of the Possible Cards.
+                6. "ig" : The information gain of the user's last question.
+                7. "quality": A metric for the quality of the user question (0 to 100)."""},
+                    {"role": "user", "content": [{"type": "image_url", "image_url": {"url": base64_image}}],},
+                    {"role": "user", "content": prompt}
+                   ],
                 response_format={"type": "json_object"})
 
         st.write(json.loads( response.choices[0].message.content))
@@ -57,7 +76,7 @@ if st.button("Submit", disabled=not prompt.strip()):
 
 st.subheader("Submit Final Guess")
 # clickable display of all cards
-clicked = clickable_images(
+st.session_state["clicked"] = clickable_images(
     paths=st.session_state["cards_base64"],
     titles=st.session_state["cards_names"],
     div_style={"display": "grid",
@@ -69,12 +88,15 @@ clicked = clickable_images(
                "justify-content": "center"},
     img_style={"max-width": "100%", "height": "auto", "object-fit": "contain"},
 )
+
+if "clicked" not in st.session_state:
+    st.session_state["clicked"] = -1
 # Submit buton displaying selected card
-submit_buton_text = f"Submit **{st.session_state["cards_names"][clicked]}** as final guess" if clicked > -1 else "No Card Selected"
-submitted = st.button(submit_buton_text, type="primary", disabled=(clicked <= -1), width="stretch")
+submit_buton_text = f"Submit **{st.session_state["cards_names"][st.session_state["clicked"]]}** as final guess" if st.session_state["clicked"] > -1 else "No Card Selected"
+submitted = st.button(submit_buton_text, type="primary", disabled=(st.session_state["clicked"] <= -1), width="stretch")
 
 if submitted:
-    st.session_state["last_guess"] = clicked
+    st.session_state["last_guess"] = st.session_state["clicked"]
     st.write(f"You submitted: {st.session_state["cards_names"][st.session_state["last_guess"]]}") # submitet gues wird nochmal angezeigt
     # Run your calculation or other action here.
     if st.session_state["last_guess"] == st.session_state['number']:
