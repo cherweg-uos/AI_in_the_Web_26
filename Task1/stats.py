@@ -4,11 +4,11 @@ import pandas as pd
 #gibt oben beim tab den Namen #nope gibt einfach nur überschrift, name ist in main.py
 st.header("Statistics")
 
-df = pd.DataFrame(, columns=["Guess #",
-                            "User Prompt",
-                            "Possile Cards",
-                            "Impossible Cards",
-                            "Entropy",
-                            "Information Gain",
-                            "Quality of Guess"])
-
+game_history_df = pd.DataFrame(columns=["Question #",
+                                "User Prompt",
+                                "Possible Cards",
+                                "Impossible Cards",
+                                "Entropy",
+                                "Information Gain",
+                                "Quality of Guess"])
+st.session_state["game_history"] = game_history_df

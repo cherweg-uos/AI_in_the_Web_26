@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from st_clickable_images import clickable_images
 from openai import OpenAI, AuthenticationError, OpenAIError
 import random
@@ -34,8 +35,13 @@ if st.session_state["debug"]:
     st.text(f"The number is #{st.session_state['number']}, which is \"{st.session_state["cards_names"][st.session_state["number"]]}\"")
     st.image(st.session_state["cards_paths"][st.session_state["number"]], width=250) #dateipfadliste[zufallsnummer]
 
+# initialise data if we don't have history to send
+if "q_idx" not in st.session_state:
+    st.session_state["q_idx"] = 0 # question 0 = before first question
+    st.session_state["p_cards"] = ["cards_names"] # all cards potenially possible
+    st.session_state["i_cards"] = [] # no impossible cards
 
-q_idx, p_cards, i_cards = 0, st.session_state["cards_names"], []
+
 st.subheader("Ask a LLM for hints")
 prompt = st.text_area("Question to ask:")
 #abrufen von base64 image 
@@ -50,15 +56,15 @@ if st.button("Submit", disabled=not prompt.strip()):
                 The user has to guess a random playing card out of a french 52 card deck.
                 The target card the user is trying to find is provided in the image in this conversation.
                 Current Game State:
-                - Question Number: {q_idx}
-                - Possible Cards: {p_cards}
-                - Impossible Cards: {i_cards}
+                - Question Number: {st.session_state["q_idx"]}
+                - Possible Cards: {st.session_state["p_cards"]}
+                - Impossible Cards: {st.session_state["i_cards"]}
 
                 Try to answer in an efficient and analytical manner. If something is not clear or concise, instead of guessing just stop and state so in the remarks. 
 
                 For your responses always return a JSON object with the following keys:
-                1. "yn_response" : A Yes/No response to the user Question.
-                2. "remark" : A sarcastic comment of your choice. If you encounter any errors or are missing things, this is where to put them.
+                1. "remark" : A sarcastic comment of your choice. If you encounter any errors or are missing things, this is where to put them.
+                2. "yn_response" : A Yes/No response to the user Question.
                 3. "p_cards" : Updated list of potential Cards based on the answer.
                 4. "i_cards" : Updated list of all impossible Cards that are now excluded by the answer.
                 5. "entropy" : The new entropy of the Possible Cards.
@@ -69,7 +75,17 @@ if st.button("Submit", disabled=not prompt.strip()):
                    ],
                 response_format={"type": "json_object"})
 
-        st.write(json.loads( response.choices[0].message.content))
+        ai_data = json.loads(response.choices[0].message.content)
+        st.session_state["q_idx"] += 1
+        st.session_state["yn_response"] = ai_data.get("yn_response")
+        st.session_state["remark"] = ai_data.get("remark")
+        st.session_state["p_cards"] = ai_data.get("p_cards")
+        st.session_state["i_cards"] = ai_data.get("i_cards")
+        st.session_state["entropy"] = ai_data.get("entropy")
+        st.session_state["ig"] = ai_data.get("ig")
+        st.session_state["quality"] = ai_data.get("quality")
+        if st.session_state["debug"]:
+            st.write(ai_data)
     
     except AuthenticationError:
         st.error("API was not accept. Please check it.")
