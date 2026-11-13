@@ -54,8 +54,13 @@ st.session_state["debug"] = st.sidebar.toggle("Activate Debug", st.session_state
 gamepage = st.Page("game.py", title="Game", icon="🎮")
 statspage = st.Page("stats.py", title="Stats", icon="📈")
 
+if st.session_state["debug"] == True: 
+    debug = st.Page("Debug.py", title="Debug", icon="🚧")
+    bug = st.navigation(pages=[gamepage, statspage,debug])
+    bug.run()
 
+else: 
 #und hier an den rand gesetzt 
-pg = st.navigation(pages=[gamepage, statspage])
-pg.run()
+    pg = st.navigation(pages=[gamepage, statspage])
+    pg.run()
 
