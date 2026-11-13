@@ -40,11 +40,6 @@ if st.session_state["debug"]:
     st.text(f"The number is #{st.session_state['number']}, which is \"{st.session_state["cards_names"][st.session_state["number"]]}\"")
     st.image(st.session_state["cards_paths"][st.session_state["number"]], width=250) #dateipfadliste[zufallsnummer]
 
-# initialise data if we don't have history to send
-if "q_idx" not in st.session_state:
-    st.session_state["q_idx"] = 0 # question 0 = before first question
-    st.session_state["p_cards"] = ["cards_names"] # all cards potenially possible
-    st.session_state["i_cards"] = [] # no impossible cards
 
 
 st.subheader("Ask a LLM for hints")
@@ -111,9 +106,7 @@ st.session_state["clicked"] = clickable_images(
     img_style={"max-width": "100%", "height": "auto", "object-fit": "contain"},
 )
 
-# react to clicked image
-if "clicked" not in st.session_state:
-    st.session_state["clicked"] = -1
+
 # Submit buton displaying selected card
 submit_buton_text = f"Submit **{st.session_state["cards_names"][st.session_state["clicked"]]}** as final guess" if st.session_state["clicked"] > -1 else "No Card Selected"
 submitted = st.button(submit_buton_text, type="primary", disabled=(st.session_state["clicked"] <= -1), width="stretch")

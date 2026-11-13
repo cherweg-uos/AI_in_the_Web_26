@@ -2,6 +2,9 @@ import streamlit as st
 import base64
 import os
 
+
+
+
 ai_key = None
 if "AI_KEY" in st.session_state: #search for key in session storage
     ai_key = st.session_state["AI_KEY"]
@@ -51,6 +54,16 @@ if "Wins" not in st.session_state:
     st.session_state["wins"] = 0 
 if "losses" not in st.session_state:
     st.session_state["losses"] = 0
+
+# initialise data if we don't have history to send
+if "q_idx" not in st.session_state:
+    st.session_state["q_idx"] = 0 # question 0 = before first question
+    st.session_state["p_cards"] = ["cards_names"] # all cards potenially possible
+    st.session_state["i_cards"] = [] # no impossible cards
+
+# react to clicked image
+if "clicked" not in st.session_state:
+    st.session_state["clicked"] = -1
 
 #hier wird debug auf False gestellt fals nichts eingetragen ist im session state
 if "debug" not in st.session_state:
