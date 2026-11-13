@@ -64,6 +64,16 @@ if "Wins" not in st.session_state:
 if "losses" not in st.session_state:
     st.session_state["losses"] = 0
 
+# initialise data if we don't have history to send
+if "q_idx" not in st.session_state:
+    st.session_state["q_idx"] = 0 # question 0 = before first question
+    st.session_state["p_cards"] = ["cards_names"] # all cards potenially possible
+    st.session_state["i_cards"] = [] # no impossible cards
+
+# react to clicked image
+if "clicked" not in st.session_state:
+    st.session_state["clicked"] = -1
+
 #hier wird debug auf False gestellt fals nichts eingetragen ist im session state
 if "debug" not in st.session_state:
     st.session_state["debug"] = False
@@ -75,8 +85,13 @@ st.session_state["debug"] = st.sidebar.toggle("Activate Debug", st.session_state
 gamepage = st.Page("game.py", title="Game", icon="🎮")
 statspage = st.Page("stats.py", title="Stats", icon="📈")
 
+if st.session_state["debug"] == True: 
+    debug = st.Page("Debug.py", title="Debug", icon="🚧")
+    bug = st.navigation(pages=[gamepage, statspage,debug])
+    bug.run()
 
+else: 
 #und hier an den rand gesetzt 
-pg = st.navigation(pages=[gamepage, statspage])
-pg.run()
+    pg = st.navigation(pages=[gamepage, statspage])
+    pg.run()
 
