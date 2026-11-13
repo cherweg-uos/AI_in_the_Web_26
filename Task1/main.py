@@ -42,6 +42,15 @@ if "cards_base64" not in st.session_state:
             st.session_state["cards_base64"].append(f"data:image/png;base64,{encoded}") #append to list
     print(f'st.session_state["cards_base64"] = DO NOT PRINT BASE 64 IMG DATA YOU STUPID') # this will no longer spam the console
 
+# initialize game statistics
+if "g_idx" not in st.session_state:
+    st.session_state["g_idx"] = 1
+if "games" not in st.session_state:
+    st.session_state["games"] = []
+if "Wins" not in st.session_state:
+    st.session_state["wins"] = 0 
+if "losses" not in st.session_state:
+    st.session_state["losses"] = 0
 
 #hier wird debug auf False gestellt fals nichts eingetragen ist im session state
 if "debug" not in st.session_state:
