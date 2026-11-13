@@ -65,11 +65,11 @@ if st.button("Submit", disabled=not prompt.strip()):
                 For your responses always return a JSON object with the following keys:
                 1. "remark" : A sarcastic comment of your choice. If you encounter any errors or are missing things, this is where to put them.
                 2. "yn_response" : A Yes/No response to the user Question.
-                3. "p_cards" : Updated list of remaining possile Cards based on the answer. (from the User's perspective)
+                3. "p_cards" : Updated list of remaining possible Cards based on the answer. (from the User's perspective)
                 4. "i_cards" : Updated list of all impossible Cards that are now excluded by the answer. (from the User's perspective)
                 5. "entropy" : The new entropy of the Possible Cards.
                 6. "ig" : The information gain of the user's last question.
-                7. "quality": A metric for the quality of the user question (0 to 100)."""},
+                7. "quality": A metric for the quality of the user question in that situation ranging from 0 (worst possible question/IG) to 100 (best possible question/IG)."""},
                     {"role": "user", "content": [{"type": "image_url", "image_url": {"url": base64_image}}],},
                     {"role": "user", "content": prompt}
                    ],
@@ -112,10 +112,10 @@ if "clicked" not in st.session_state:
 submit_buton_text = f"Submit **{st.session_state["cards_names"][st.session_state["clicked"]]}** as final guess" if st.session_state["clicked"] > -1 else "No Card Selected"
 submitted = st.button(submit_buton_text, type="primary", disabled=(st.session_state["clicked"] <= -1), width="stretch")
  
-if "loose" not in st.session_state:
-    st.session_state["loose"] = 0
+if "losses" not in st.session_state:
+    st.session_state["losses"] = 0
 if "Wins" not in st.session_state:
-    st.session_state["Wins"] = 0 
+    st.session_state["wins"] = 0 
 
 if submitted:
     st.session_state["last_guess"] = st.session_state["clicked"]
@@ -125,9 +125,9 @@ if submitted:
         st.success("Yeah! You did it")
         st.balloons()
         del st.session_state['number']
-        st.session_state["Wins"] = st.session_state["Wins"] + 1
+        st.session_state["wins"] = st.session_state["wins"] + 1
     else:
         st.error("Oh no. The Card is wrong.")
-        st.session_state["loose"] = st.session_state["loose"] + 1 
+        st.session_state["losses"] = st.session_state["losses"] + 1 
       
         
