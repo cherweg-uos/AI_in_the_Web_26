@@ -1,8 +1,11 @@
 import streamlit as st
+from openai import OpenAI, AuthenticationError, OpenAIError
 import base64
 import os
+import time
 
-ai_key = None
+
+
 if "AI_KEY" in st.session_state: #search for key in session storage
     ai_key = st.session_state["AI_KEY"]
     print("Loaded AI Key from session")
@@ -12,12 +15,21 @@ elif os.path.exists(".streamlit/secrets.toml"): #search for a secrets file
         st.session_state["AI_KEY"] = ai_key
         print("Loaded AI Key from secrets")
 
-if ai_key == None: #Ask for AI key
+else: #Ask for AI key
     ai_key_input = st.text_input("Enter your AI Key:", type="password", required=True)
     if ai_key_input:
-        st.session_state["AI_KEY"] = ai_key_input
-        print("Loaded AI Key from Input") 
-        st.rerun() # make input box disappear by rerunning
+        with st.spinner("Checking AI Key", show_time=True):
+            time.sleep(1)
+            try:
+                OpenAI(api_key=ai_key_input).models.list()
+                st.session_state["AI_KEY"] = ai_key_input
+                print("Loaded valid AI Key from Input")
+                st.info("Valid AI Key")
+                st.rerun()
+            except:
+                st.error("Invalid AI Key")
+                ai_key_input = None
+    st.stop() # make input box disappear by rerunning
 
 
 # populate lists for the card filennames and paths

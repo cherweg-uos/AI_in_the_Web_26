@@ -45,13 +45,14 @@ if "q_idx" not in st.session_state:
     st.session_state["q_idx"] = 0 # question 0 = before first question
     st.session_state["p_cards"] = ["cards_names"] # all cards potenially possible
     st.session_state["i_cards"] = [] # no impossible cards
+    st.session_state["last_guess"] = -1
 
 
 st.subheader("Ask a LLM for hints")
 prompt = st.text_area("Question to ask:")
 #abrufen von base64 image 
 base64_image = st.session_state["cards_base64"][st.session_state["number"]]
-if st.button("Submit", disabled=not prompt.strip()):
+if st.button("Submit", disabled=not prompt.strip(), shortcut="Enter"):
     try:
         with st.spinner("Answer is being created …"):
             response = client.chat.completions.create(
