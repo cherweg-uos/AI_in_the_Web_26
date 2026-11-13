@@ -13,5 +13,5 @@ game_history_df = pd.DataFrame(columns=["Question #",
                                 "Quality of Guess"])
 st.session_state["game_history"] = game_history_df
 
-st.write(f"Loose: {st.session_state["loose"]}")
+st.write(f"Looses: {st.session_state["loose"]}")
 st.write(f"Wins: {st.session_state["Wins"]}")

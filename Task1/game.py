@@ -18,14 +18,19 @@ st.header("Guessing Game")
 
 st.set_page_config(layout="wide")
 
+# function to call when resetting the game
+def game_reset() -> None:
+    st.session_state.pop("number") # remove selected cart
+    st.session_state.pop("last_guess") # remove last guess
+    st.session_state.pop("q_idx") # remove question index
+    st.session_state["g_idx"] += 1 # increase the game index
+
 # create a new random number if we don't have one yet / und ein knopf wird erstelt 
 resetbuton = st.button("Restart the Game", width="stretch")
 if resetbuton:
-    st.session_state["number"] = None
-    st.session_state["last_guess"] = None
-    # todo: implement full reset
+    game_reset()
 
-#falls noch keine nummer festgelegt ist wird hier random eine zwischen 0&51
+#falls noch keine nummer festgelegt ist wird hier random eine zwischen 0 and 51
 if ("number" not in st.session_state) or resetbuton:
     st.session_state["number"] = random.randint(0,51)
     st.info("New Card Selected!")
@@ -106,17 +111,14 @@ st.session_state["clicked"] = clickable_images(
     img_style={"max-width": "100%", "height": "auto", "object-fit": "contain"},
 )
 
+# react to clicked image
 if "clicked" not in st.session_state:
     st.session_state["clicked"] = -1
 # Submit buton displaying selected card
 submit_buton_text = f"Submit **{st.session_state["cards_names"][st.session_state["clicked"]]}** as final guess" if st.session_state["clicked"] > -1 else "No Card Selected"
 submitted = st.button(submit_buton_text, type="primary", disabled=(st.session_state["clicked"] <= -1), width="stretch")
  
-if "losses" not in st.session_state:
-    st.session_state["losses"] = 0
-if "Wins" not in st.session_state:
-    st.session_state["wins"] = 0 
-
+# check if guess is correct
 if submitted:
     st.session_state["last_guess"] = st.session_state["clicked"]
     st.write(f"You submitted: {st.session_state["cards_names"][st.session_state["last_guess"]]}") # submitet gues wird nochmal angezeigt
@@ -127,6 +129,7 @@ if submitted:
         del st.session_state['number']
         st.session_state["wins"] = st.session_state["wins"] + 1
     else:
+        st.snow()
         st.error("Oh no. The Card is wrong.")
         st.session_state["losses"] = st.session_state["losses"] + 1 
       
