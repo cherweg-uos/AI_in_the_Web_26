@@ -3,7 +3,8 @@ import pandas as pd
 
 #gibt oben beim tab den Namen #nope gibt einfach nur überschrift, name ist in main.py
 st.header("Statistics")
-
+st.divider()
+st.subheader("Total")
 
 results_df = pd.DataFrame(
     {
@@ -24,9 +25,10 @@ st.bar_chart(total_results_df, x=None, y=["Total Losses", "Total Wins"], y_label
 
 st.dataframe(total_results_df, hide_index=True)
 
-st.bar_chart(results_df, x=None, y=["Losses", "Wins"], x_label="Game #", y_label="Score", color=["red","green"] )
-
 st.divider()
+st.subheader("Per Game")
+
+st.bar_chart(results_df, x=None, y=["Losses", "Wins"], x_label="Game #", y_label="Score", color=["red","green"] )
 
 tab_names = [f"Game {i+1}" for i, _ in enumerate(st.session_state["game_dfs"])]
 tabs = st.tabs(tab_names)
