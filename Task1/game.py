@@ -23,8 +23,7 @@ st.title("Guessing Game", text_alignment="center")
 # function to call when resetting the game
 def game_reset() -> None:
     st.session_state["number"] = random.randint(0,51) # remove selected cart
-    st.info("New Card Selected!")
-    del st.session_state["last_guess"] # remove last guess
+    st.session_state["last_guess"] = None # remove last guess
     st.session_state["q_idx"] = 0 # reset question index
     st.session_state["g_idx"] += 1 # increase the game index
     st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
@@ -36,6 +35,9 @@ def game_reset() -> None:
                                                         "Information Gain": "",
                                                         "Quality of Guess (AI)": "",
                                                         "Quality of Guess": ""}])) # add new game df to game_dfs
+    st.session_state["reset"] = True
+    st.rerun()
+    
 
 def calculate_entropy(p_cards, i_cards) -> tuple[float, float]:
     p_hit = 1/len(p_cards)
@@ -46,9 +48,14 @@ def calculate_entropy(p_cards, i_cards) -> tuple[float, float]:
     global_entropy = (len(p_cards) / (len(p_cards) + len(i_cards)) * local_entropy)
     return local_entropy, global_entropy
 
+if st.session_state["reset"]:
+    st.info("Game has been Reset")
+    st.session_state["reset"] = False
+
 # create a new random number if we don't have one yet / und ein knopf wird erstelt 
 resetbuton = st.button("Restart the Game", width="stretch")
 if resetbuton:
+    st.session_state["results"].append(0)
     game_reset()
 
 #falls noch keine nummer festgelegt ist wird hier random eine zwischen 0 and 51
@@ -95,7 +102,7 @@ if st.button("Submit", disabled=not user_prompt.strip(), shortcut="Enter"):
     # try getting AI response
     try:
         with st.spinner("Answer is being created …"):
-            time.sleep(1)
+            time.sleep(0.5)
             response = client.chat.completions.create(
                 model="Qwen/Qwen3.8-27B-FP8",
                 messages=[
@@ -183,7 +190,8 @@ if submitted:
         st.session_state["results"].append(1)
     else:
         st.error("Oh no. The Card is wrong.")
-        st.session_state["results"].append(0)
-    time.sleep(500) # wait a bit before forced reset
-    game_reset() #forced reset so you can't add guesses once the game is over
+        st.session_state["results"].append(-1)
+    with st.spinner("Game is being reset …"):
+        time.sleep(2) # wait a bit before forced reset
+        game_reset() #forced reset so you can't add guesses once the game is over
         

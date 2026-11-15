@@ -73,13 +73,16 @@ if "cards_base64" not in st.session_state:
     print(f'st.session_state["cards_base64"] = DO NOT PRINT BASE 64 IMG DATA YOU STUPID') # this will no longer spam the console
 
 
+if "reset" not in st.session_state:
+    st.session_state["reset"] = False
+
 # initialize game statistics
 if "g_idx" not in st.session_state:
     st.session_state["g_idx"] = 0 # zähler für spielenummer
 
 # initialise data if we don't have history
 if "q_idx" not in st.session_state:
-    st.session_state["q_idx"] = 0 # question 0 = before first question
+    st.session_state["q_idx"] = 1
     st.session_state["p_cards"] = st.session_state["short_cards_names"] # all cards potenially possible
     st.session_state["i_cards"] = [] # no impossible cards
 
@@ -101,6 +104,8 @@ if "results" not in st.session_state:
 # react to clicked image
 if "clicked" not in st.session_state:
     st.session_state["clicked"] = -1
+if "last_guess" not in st.session_state:
+    st.session_state["last_guess"] = None
 
 #hier wird debug auf False gestellt fals nichts eingetragen ist im session state
 if "debug" not in st.session_state:

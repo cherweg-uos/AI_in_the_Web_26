@@ -4,8 +4,27 @@ import pandas as pd
 #gibt oben beim tab den Namen #nope gibt einfach nur überschrift, name ist in main.py
 st.header("Statistics")
 
-st.write(f"Wins: {sum(st.session_state["results"])}") # sum of all 1s
-st.write(f"Looses: {len(st.session_state["results"]) - sum(st.session_state["results"])}") # Total - all 1s
+
+results_df = pd.DataFrame(
+    {
+        "Wins": [1 if x == 1 else 0 for x in st.session_state["results"]],
+        "Losses": [-1 if x == -1 else 0 for x in st.session_state["results"]],
+    }
+)
+results_df.index += 1 # shift game indices by one for display
+
+total_results_df = pd.DataFrame(
+    {
+        "Total Wins": [sum(results_df["Wins"])],
+        "Total Losses": [sum(results_df["Losses"])],
+    }
+)
+
+st.bar_chart(total_results_df, x=None, y=["Total Losses", "Total Wins"], y_label="Score", color=["red","green"], horizontal=True)
+
+st.dataframe(total_results_df, hide_index=True)
+
+st.bar_chart(results_df, x=None, y=["Losses", "Wins"], x_label="Game #", y_label="Score", color=["red","green"] )
 
 st.divider()
 
@@ -14,8 +33,14 @@ tabs = st.tabs(tab_names)
 
 for i, tab in enumerate(tabs):
     try:
-        game_state = "Win" if st.session_state["results"][i] else "Loss"
+        match st.session_state["results"][i]:
+            case 1:
+                game_state = "Win"
+            case 0:
+                game_state = "Reset"
+            case -1:
+                game_state = "Loss"
     except:
-        game_state = "Ongoig"
+        game_state = "Unfinished"
     tab.subheader(f'Game {i+1}: {game_state}')
     tab.write(st.session_state["game_dfs"][i])
