@@ -19,7 +19,6 @@ client = OpenAI(
 
 st.title("Guessing Game", text_alignment="center")
 
-st.set_page_config(layout="wide")
 
 # function to call when resetting the game
 def game_reset() -> None:
@@ -28,7 +27,15 @@ def game_reset() -> None:
     del st.session_state["last_guess"] # remove last guess
     st.session_state["q_idx"] = 0 # reset question index
     st.session_state["g_idx"] += 1 # increase the game index
-    st.session_state["game_dfs"].append(pd.DataFrame(columns=st.session_state["columns"])) # add new game df to game_dfs
+    st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
+                                                        "User Prompt": "",
+                                                        "AI Response": "",
+                                                        "Possible Cards": st.session_state["p_cards"],
+                                                        "Impossible Cards": st.session_state["i_cards"],
+                                                        "Global Entropy": calculate_entropy(st.session_state["p_cards"], [])[1],
+                                                        "Information Gain": "",
+                                                        "Quality of Guess (AI)": "",
+                                                        "Quality of Guess": ""}])) # add new game df to game_dfs
 
 def calculate_entropy(p_cards, i_cards) -> tuple[float, float]:
     p_hit = 1/len(p_cards)
@@ -56,54 +63,49 @@ if st.session_state["debug"]:
 st.divider()
 
 st.subheader("Ask a LLM for hints")
-prompt = st.text_area("Question to ask: (Responses will be Yes/No only)")
+user_prompt = st.text_area("Question to ask: (Responses will be Yes/No only)")
 #abrufen von base64 image 
 base64_image = st.session_state["cards_base64"][st.session_state["number"]]
-if st.button("Submit", disabled=not prompt.strip(), shortcut="Enter"):
+if st.button("Submit", disabled=not user_prompt.strip(), shortcut="Enter"):
+    # generate new system promt
+    system_prompt = f"""
+    You are a strict, infallible referee for a 52-card guessing game.
+    Target Card in Image: {st.session_state["cards_names"][st.session_state["number"]]} ({st.session_state["short_cards_names"][st.session_state["number"]]})
+    Current Remaining Candidates: {st.session_state["p_cards"]}
+
+    Rules:
+    1. "thought": In exactly 1 short sentence briefly analyze if the Target Card satisfies the user's question. 
+    2. "yn": Must be strictly "Yes" or "No".
+    3. "elim": A Python-style list of card names from the "Current Remaining Candidates" that must be ELIMINATED based on the user's question and your "yn" answer. 
+       - If yn is "Yes": eliminate all remaining candidates that DO NOT match the question.
+       - If yn is "No": eliminate all remaining candidates that DO match the question.
+       - CRITICAL: The Target Card must NEVER be in "elim".
+    4. "q": Score question quality from 0 to 100 (100 = 50/50 split).
+    5. "rem": Short Sarcastic remark.
+
+    JSON Output Requirements (Mandatory):
+    {{
+      "thought": "<string>",
+      "yn": "Yes" | "No",
+      "elim": ["<Card Name>", ...],
+      "q": <integer 0-100>,
+      "rem": "<string>"
+    }}
+    """
+    # try getting AI response
     try:
         with st.spinner("Answer is being created …"):
             time.sleep(1)
             response = client.chat.completions.create(
-                model="google/gemma-4-E4B-it",
-                messages=[{"role": "developer", "content": f"""
-                You are the game master for a card-guessing game using a standard French 52-card deck.
-                The user is trying to guess the hidden target card by asking yes/no questions.
-
-                ### Game State
-                - Target Card: {st.session_state["cards_names"][st.session_state["number"]]}
-                - Question Number: {st.session_state["q_idx"]}
-                - Remaining Possible Cards [p_cards]: {st.session_state["p_cards"]}
-
-                ### Evaluation Rules
-                1. Determine whether the user's question is a valid Yes/No question about properties of the target card.
-                2. If the question cannot be answered with Yes/No or is ambiguous:
-                - Set "yn_response" to null.
-                - Set "eliminated_cards" to [].
-                - Set "quality" to 0.
-                - Explain the issue in "remark".
-                3. If the question is valid:
-                - Answer strictly against the Target Card ("Yes" or "No" in the language of the question).
-                - Identify every card in [p_cards] that contradicts the answer and return them in "eliminated_cards".
-                - Do NOT return the full deck or uneliminated cards.
-                4. Estimate Question Quality (integer from 0 to 100) based on strategic expected information gain, NOT the actual outcome:
-                - 90~100: Near-optimal binary split (divides [p_cards] roughly 50/50 regardless of the answer).
-                - 60~89: Useful broader partition (e.g., suit, rank range).
-                - 10~59: Highly unbalanced/risky question (e.g., guessing a single card when many candidates remain).
-                - 0: Tautological, redundant (eliminates 0 cards under either outcome), or invalid question.
-
-                ### Output Format
-                Always return a valid JSON object matching this schema:
-                {{
-                "yn_response": "Yes" | "No" | null,
-                "eliminated_cards": ["<card_name>", ...],
-                "quality": <integer 0-100>,
-                "remark": "<sarcastic comment, or explanation if question was invalid/ambiguous>"
-                }}
-                """},
-                    {"role": "user", "content": [{"type": "image_url", "image_url": {"url": base64_image}}],},
-                    {"role": "user", "content": prompt}
-                   ],
-                response_format={"type": "json_object"})
+                model="Qwen/Qwen3.8-27B-FP8",
+                messages=[
+                    {"role": "system","content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.0,
+                max_tokens=800
+            )
 
         # load ai response jsonn
         ai_data = json.loads(response.choices[0].message.content)
@@ -111,35 +113,36 @@ if st.button("Submit", disabled=not prompt.strip(), shortcut="Enter"):
         # show responses in browser
         if st.session_state["debug"]:
             st.write(ai_data)
-        st.write(ai_data.get("remark"))
-        st.write(ai_data.get("yn_response"))
+        st.write(ai_data.get("rem"))
+        st.write(ai_data.get("yn"))
 
         # update possible and impossile cards
-        eliminated = set(ai_data.get("eliminated_cards", [])) #
+        eliminated = set(ai_data.get("elim", []))
         st.session_state["p_cards"] = [c for c in st.session_state["p_cards"] if c not in eliminated] # add only non eliminated cards back
         st.session_state["i_cards"].extend(eliminated) # add new excluded cards
 
         # calculate entropy and information gain
-        local_entropy, global_entropy = calculate_entropy(st.session_state["p_cards"], st.session_state["i_cards"])
-        information_gain = st.session_state["game_dfs"][-1]["Global Entropy"][-1] - global_entropy
+        _, global_entropy = calculate_entropy(st.session_state["p_cards"], st.session_state["i_cards"])
+        information_gain = st.session_state["game_dfs"][-1]["Global Entropy"].iloc[-1] - global_entropy
 
         # log all data in new df
         new_data = {"Question #": st.session_state["q_idx"],
-                    "User Prompt": prompt,
-                    "AI Response": ai_data.get("yn_response"),
+                    "User Prompt": user_prompt,
+                    "AI Response": ai_data.get("yn"),
                     "Possible Cards": st.session_state["p_cards"],
                     "Impossible Cards": st.session_state["i_cards"],
                     "Global Entropy": global_entropy,
                     "Information Gain": information_gain,
-                    "Quality of Guess": ai_data.get("quality")}
+                    "Quality of Guess (AI)": ai_data.get("q"),
+                    "Quality of Guess": ""}
         new_df = pd.DataFrame([new_data])
         if st.session_state["debug"]:
             st.write(new_df)
 
         # concateate to corresponding game_dfs(used to just append but pandas no likey)
-        st.session_state["game_dfs"][st.session_state["g_idx"]] = pd.concat([st.session_state["game_dfs"][st.session_state["g_idx"]], new_df], ignore_index=True)
+        st.session_state["game_dfs"][-1] = pd.concat([st.session_state["game_dfs"][-1], new_df], ignore_index=True)
         if st.session_state["debug"]:
-            st.write(st.session_state["game_dfs"][st.session_state["g_idx"]])
+            st.write(st.session_state["game_dfs"][-1])
 
         # update relevant game states for next innput 
         st.session_state["q_idx"] += 1

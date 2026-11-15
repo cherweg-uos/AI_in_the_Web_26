@@ -15,6 +15,8 @@ def calculate_entropy(p_cards, i_cards) -> tuple[float, float]:
     global_entropy = (len(p_cards) / (len(p_cards) + len(i_cards)) * local_entropy)
     return local_entropy, global_entropy
 
+st.set_page_config(layout="wide")
+
 if "AI_KEY" in st.session_state: #search for key in session storage
     ai_key = st.session_state["AI_KEY"]
     print("Loaded AI Key from session")
@@ -35,9 +37,8 @@ else: #Ask for AI key
                 print("Loaded valid AI Key from Input")
                 st.info("Valid AI Key")
                 st.rerun()
-            except:
+            except OpenAIError:
                 st.error("Invalid AI Key")
-                ai_key_input = None
     st.stop() # make input box disappear by rerunning
 
 
@@ -48,6 +49,14 @@ if "cards_names" not in st.session_state:
         for rank in ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"]: # keep this order to match file order
             st.session_state["cards_names"].append(f"{rank} of {suit}") # add card name RANK of SUIT to list
     print(f'st.session_state["cards_names"] = {st.session_state["cards_names"]}')
+
+# attempt to improve AI performance
+if "short_cards_names" not in st.session_state:
+    st.session_state["short_cards_names"] = [] # start with empty lsit
+    for suit in ["C", "D", "H", "S"]: # keep this order to match file order
+        for rank in ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]: # keep this order to match file order
+            st.session_state["short_cards_names"].append(f"{rank}{suit}") # add card name RANK of SUIT to list
+    print(f'st.session_state["short_cards_names"] = {st.session_state["short_cards_names"]}')
 
 # populate lists for the card filennames and paths
 if "cards_paths" not in st.session_state:
@@ -71,10 +80,10 @@ if "g_idx" not in st.session_state:
 # initialise data if we don't have history
 if "q_idx" not in st.session_state:
     st.session_state["q_idx"] = 0 # question 0 = before first question
-    st.session_state["p_cards"] = st.session_state["cards_names"] # all cards potenially possible
+    st.session_state["p_cards"] = st.session_state["short_cards_names"] # all cards potenially possible
     st.session_state["i_cards"] = [] # no impossible cards
 
-if "games" not in st.session_state:
+if "game_dfs" not in st.session_state:
     st.session_state["game_dfs"] = [] # hier gehöre die df's für jeden durchlauf rein
     st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
                                                         "User Prompt": "",
@@ -83,10 +92,10 @@ if "games" not in st.session_state:
                                                         "Impossible Cards": st.session_state["i_cards"],
                                                         "Global Entropy": calculate_entropy(st.session_state["p_cards"], [])[1],
                                                         "Information Gain": "",
+                                                        "Quality of Guess (AI)": "",
                                                         "Quality of Guess": ""}]))
 if "results" not in st.session_state:
     st.session_state["results"] = [] # liste aller ergebnisse 1 = Win, 0 = Lose
-
 
 
 # react to clicked image
