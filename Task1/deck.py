@@ -7,3 +7,6 @@ print(len(deck))
 
 #brauchen wir das gerade noch weil wir arbeiten ja nicht mehr mit hex
 #und wohin wird das geprintet 
+
+# und? code ist jetzt historical und darf nicht anfefasst werden
+# geprinted wird ins terminal?

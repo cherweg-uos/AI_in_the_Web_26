@@ -1,10 +1,19 @@
 import streamlit as st
+import pandas as pd
 from openai import OpenAI, AuthenticationError, OpenAIError
 import base64
 import os
 import time
+import math
 
-
+def calculate_entropy(p_cards, i_cards) -> tuple[float, float]:
+    p_hit = 1/len(p_cards)
+    if p_hit == 1:
+        return 0, 0
+    p_miss = 1 - p_hit
+    local_entropy = -(p_hit * math.log2(p_hit) + p_miss * math.log2(p_miss))
+    global_entropy = (len(p_cards) / (len(p_cards) + len(i_cards)) * local_entropy)
+    return local_entropy, global_entropy
 
 if "AI_KEY" in st.session_state: #search for key in session storage
     ai_key = st.session_state["AI_KEY"]
@@ -54,21 +63,31 @@ if "cards_base64" not in st.session_state:
             st.session_state["cards_base64"].append(f"data:image/png;base64,{encoded}") #append to list
     print(f'st.session_state["cards_base64"] = DO NOT PRINT BASE 64 IMG DATA YOU STUPID') # this will no longer spam the console
 
+
 # initialize game statistics
 if "g_idx" not in st.session_state:
-    st.session_state["g_idx"] = 1
-if "games" not in st.session_state:
-    st.session_state["games"] = []
-if "Wins" not in st.session_state:
-    st.session_state["wins"] = 0 
-if "losses" not in st.session_state:
-    st.session_state["losses"] = 0
+    st.session_state["g_idx"] = 0 # zähler für spielenummer
 
-# initialise data if we don't have history to send
+# initialise data if we don't have history
 if "q_idx" not in st.session_state:
     st.session_state["q_idx"] = 0 # question 0 = before first question
-    st.session_state["p_cards"] = ["cards_names"] # all cards potenially possible
+    st.session_state["p_cards"] = st.session_state["cards_names"] # all cards potenially possible
     st.session_state["i_cards"] = [] # no impossible cards
+
+if "games" not in st.session_state:
+    st.session_state["game_dfs"] = [] # hier gehöre die df's für jeden durchlauf rein
+    st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
+                                                        "User Prompt": "",
+                                                        "AI Response": "",
+                                                        "Possible Cards": st.session_state["p_cards"],
+                                                        "Impossible Cards": st.session_state["i_cards"],
+                                                        "Global Entropy": calculate_entropy(st.session_state["p_cards"], [])[1],
+                                                        "Information Gain": "",
+                                                        "Quality of Guess": ""}]))
+if "results" not in st.session_state:
+    st.session_state["results"] = [] # liste aller ergebnisse 1 = Win, 0 = Lose
+
+
 
 # react to clicked image
 if "clicked" not in st.session_state:
@@ -86,7 +105,7 @@ gamepage = st.Page("game.py", title="Game", icon="🎮")
 statspage = st.Page("stats.py", title="Stats", icon="📈")
 
 if st.session_state["debug"] == True: 
-    debug = st.Page("Debug.py", title="Debug", icon="🚧")
+    debug = st.Page("debug.py", title="Debug", icon="🚧")
     bug = st.navigation(pages=[gamepage, statspage,debug])
     bug.run()
 
