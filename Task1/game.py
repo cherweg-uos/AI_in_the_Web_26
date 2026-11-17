@@ -69,11 +69,56 @@ if st.session_state["debug"]:
 
 st.divider()
 
+st.subheader("Submit Final Guess")
+# clickable display of all cards
+st.session_state["clicked"] = clickable_images(
+    paths=st.session_state["cards_base64"],
+    titles=st.session_state["cards_names"],
+    div_style={"display": "grid",
+               "grid-template-columns": "repeat(13, 1fr)",
+               "grid-template-rows": "repeat(4, 1fr)",
+               "gap": "10px",
+               "max-width": "100%",
+               "box-sizing": "border-box",
+               "justify-content": "center"},
+    img_style={"max-width": "100%", "height": "auto", "object-fit": "contain"},
+)
+
+# Submit buton displaying selected card
+submit_buton_text = f"Submit **{st.session_state["cards_names"][st.session_state["clicked"]]}** as final guess" if st.session_state["clicked"] > -1 else "No Card Selected"
+submitted = st.button(submit_buton_text, type="primary", disabled=(st.session_state["clicked"] <= -1), width="stretch")
+ 
+# check if guess is correct
+if submitted:
+    st.session_state["last_guess"] = st.session_state["clicked"]
+    st.write(f"You submitted: {st.session_state["cards_names"][st.session_state["last_guess"]]}") # submitet gues wird nochmal angezeigt
+    # Run your calculation or other action here.
+    if st.session_state["last_guess"] == st.session_state['number']:
+        st.success("Yeah! You did it")
+        st.balloons()
+        del st.session_state['number']
+        st.session_state["results"].append(1)
+    else:
+        st.error("Oh no. The Card is wrong.")
+        st.session_state["results"].append(-1)
+    with st.spinner("Game is being reset …"):
+        time.sleep(2) # wait a bit before forced reset
+        game_reset() #forced reset so you can't add guesses once the game is over
+        
+st.divider()
+
 st.subheader("Ask a LLM for hints")
-user_prompt = st.text_area("Question to ask: (Responses will be Yes/No only)")
-#abrufen von base64 image 
-base64_image = st.session_state["cards_base64"][st.session_state["number"]]
-if st.button("Submit", disabled=not user_prompt.strip(), shortcut="Enter"):
+
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only)"):
+    with st.chat_message("user"): # in a user side chat bubble
+        st.markdown(user_prompt) # display the prompt
+    st.session_state["messages"].append({"role": "user", "content": user_prompt}) # Add user_prompt to chat history
+    
     # generate new system promt
     system_prompt = f"""
     You are a strict, infallible referee for a 52-card guessing game.
@@ -117,11 +162,16 @@ if st.button("Submit", disabled=not user_prompt.strip(), shortcut="Enter"):
         # load ai response jsonn
         ai_data = json.loads(response.choices[0].message.content)
 
-        # show responses in browser
+        # output response as an asisstant side chat bubble
+        with st.chat_message("assistant"):
+            ai_response = st.write_stream([ai_data.get("yn")])
+        st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
+        with st.chat_message("assistant"):
+            ai_remark = st.write_stream([ai_data.get("rem")])
+        st.session_state.messages.append({"role": "assistant", "content": ai_remark}) # add ai_remark to chat history
+
         if st.session_state["debug"]:
             st.write(ai_data)
-        st.write(ai_data.get("rem"))
-        st.write(ai_data.get("yn"))
 
         # update possible and impossile cards
         eliminated = set(ai_data.get("elim", []))
@@ -156,42 +206,3 @@ if st.button("Submit", disabled=not user_prompt.strip(), shortcut="Enter"):
 
     except AuthenticationError:
         st.error("API was not accept. Please check it.")
-
-st.divider()
-
-st.subheader("Submit Final Guess")
-# clickable display of all cards
-st.session_state["clicked"] = clickable_images(
-    paths=st.session_state["cards_base64"],
-    titles=st.session_state["cards_names"],
-    div_style={"display": "grid",
-               "grid-template-columns": "repeat(13, 1fr)",
-               "grid-template-rows": "repeat(4, 1fr)",
-               "gap": "10px",
-               "max-width": "100%",
-               "box-sizing": "border-box",
-               "justify-content": "center"},
-    img_style={"max-width": "100%", "height": "auto", "object-fit": "contain"},
-)
-
-# Submit buton displaying selected card
-submit_buton_text = f"Submit **{st.session_state["cards_names"][st.session_state["clicked"]]}** as final guess" if st.session_state["clicked"] > -1 else "No Card Selected"
-submitted = st.button(submit_buton_text, type="primary", disabled=(st.session_state["clicked"] <= -1), width="stretch")
- 
-# check if guess is correct
-if submitted:
-    st.session_state["last_guess"] = st.session_state["clicked"]
-    st.write(f"You submitted: {st.session_state["cards_names"][st.session_state["last_guess"]]}") # submitet gues wird nochmal angezeigt
-    # Run your calculation or other action here.
-    if st.session_state["last_guess"] == st.session_state['number']:
-        st.success("Yeah! You did it")
-        st.balloons()
-        del st.session_state['number']
-        st.session_state["results"].append(1)
-    else:
-        st.error("Oh no. The Card is wrong.")
-        st.session_state["results"].append(-1)
-    with st.spinner("Game is being reset …"):
-        time.sleep(2) # wait a bit before forced reset
-        game_reset() #forced reset so you can't add guesses once the game is over
-        

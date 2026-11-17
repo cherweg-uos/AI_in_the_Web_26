@@ -107,6 +107,9 @@ if "clicked" not in st.session_state:
 if "last_guess" not in st.session_state:
     st.session_state["last_guess"] = None
 
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
 #hier wird debug auf False gestellt fals nichts eingetragen ist im session state
 if "debug" not in st.session_state:
     st.session_state["debug"] = False
