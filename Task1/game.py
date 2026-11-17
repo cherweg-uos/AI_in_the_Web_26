@@ -38,7 +38,7 @@ def game_reset() -> None:
     st.session_state["reset"] = True
     st.rerun()
     
-
+#warum zwei mal 
 def calculate_entropy(p_cards, i_cards) -> tuple[float, float]:
     p_hit = 1/len(p_cards)
     if p_hit == 1:
@@ -191,7 +191,7 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
                     "Global Entropy": global_entropy,
                     "Information Gain": information_gain,
                     "Quality of Guess (AI)": ai_data.get("q"),
-                    "Quality of Guess": ""}
+                    "Quality of Guess": ""} #?
         new_df = pd.DataFrame([new_data])
         if st.session_state["debug"]:
             st.write(new_df)
