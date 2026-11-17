@@ -37,7 +37,8 @@ else: #Ask for AI key
                 print("Loaded valid AI Key from Input")
                 st.info("Valid AI Key")
                 st.rerun()
-            except OpenAIError:
+            except OpenAIError as ai_error:
+                st.write(ai_error)
                 st.error("Invalid AI Key")
     st.stop() # make input box disappear by rerunning
 
