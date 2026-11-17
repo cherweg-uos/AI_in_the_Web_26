@@ -32,13 +32,12 @@ else: #Ask for AI key
         with st.spinner("Checking AI Key", show_time=True):
             time.sleep(1)
             try:
-                OpenAI(api_key=ai_key_input).models.list()
+                OpenAI(api_key=ai_key_input, base_url="https://litellm.uni-osnabrueck.de/v1").models.list()
                 st.session_state["AI_KEY"] = ai_key_input
                 print("Loaded valid AI Key from Input")
                 st.info("Valid AI Key")
                 st.rerun()
             except OpenAIError as ai_error:
-                st.write(ai_error)
                 st.error("Invalid AI Key")
     st.stop() # make input box disappear by rerunning
 
