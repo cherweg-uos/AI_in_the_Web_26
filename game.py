@@ -29,7 +29,7 @@ def game_reset() -> None:
     st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
                                                         "User Prompt": "",
                                                         "AI Response": "",
-                                                        "Global Entropy": calculate_entropy(st.session_state["p_cards"], [])[1],
+                                                        "Global Entropy": math.log2(52),
                                                         "Information Gain": "",
                                                         "Quality of Guess (AI)": "",
                                                         "Quality of Guess": "",
