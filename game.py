@@ -9,16 +9,11 @@ import json
 import time
 import os 
 
-
-
 # pass the entered key
 client = OpenAI(
     base_url="https://litellm.uni-osnabrueck.de/v1",
     api_key= st.session_state["AI_KEY"]
 )
-
-st.title("Card Guessing Game", text_alignment="center")
-
 
 # function to call when resetting the game
 def game_reset() -> None:
@@ -26,6 +21,7 @@ def game_reset() -> None:
     st.session_state["last_guess"] = None # remove last guess
     st.session_state["q_idx"] = 0 # reset question index
     st.session_state["g_idx"] += 1 # increase the game index
+    st.session_state["p_cards"] = st.session_state["short_cards_names"]
     st.session_state["messages"] = []
     st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
                                                         "User Prompt": "",
@@ -62,7 +58,7 @@ def stream_text(text: str):
 # create a new random number if we don't have one yet / und ein knopf wird erstelt 
 resetbuton = st.button("Restart the Game", width="stretch")
 if resetbuton:
-    st.session_state["results"].append(0)
+    st.session_state["results"] = np.append(st.session_state["results"], 0)
     game_reset()
 
 #falls noch keine nummer festgelegt ist wird hier random eine zwischen 0 and 51
@@ -103,10 +99,10 @@ if submitted:
         st.success("Yeah! You did it")
         st.balloons()
         del st.session_state['number']
-        np.append(st.session_state["results"], 1)
+        st.session_state["results"] = np.append(st.session_state["results"], 1)
     else:
         st.error("Oh no. The Card is wrong.")
-        np.append(st.session_state["results"], -1)
+        st.session_state["results"] = np.append(st.session_state["results"], -1)
     with st.spinner("Game is being reset …"):
         time.sleep(2) # wait a bit before forced reset
         game_reset() #forced reset so you can't add guesses once the game is over
@@ -149,6 +145,8 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
     Target Card: {st.session_state["cards_names"][st.session_state["number"]]} ({st.session_state["short_cards_names"][st.session_state["number"]]})
     Current Remaining Candidates: {st.session_state["p_cards"]}
 
+    Rank values: A=1, 2=2, 3=3, 4=4, 5=5, 6=6, 7=7, 8=8, 9=9, 10=10, J=11, Q=12, K=13.
+
     Rules:
     1. "thought": In exactly 1 short sentence briefly analyze if the Target Card satisfies the user's question. 
     2. "yn": Must be strictly "Yes" or "No".
@@ -161,8 +159,8 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
       "thought": "<string>",
       "yn": "Yes" | "No",
       "matching": ["<card code>", ...],
-      "rem": "<string>"
-      "q": <integer 0-100>,
+      "rem": "<string>",
+      "q": <integer 0-100>
     }}
     """
     # try getting AI response
@@ -190,6 +188,9 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
             # load ai response jsonn
             ai_data = json.loads(response.choices[0].message.content)
 
+            # update relevant game states for next innput 
+            st.session_state["q_idx"] += 1
+            
             # output response as an asisstant chat bubble
             with chat_container.chat_message("assistant"):
                 ai_response = st.write_stream(stream_text(ai_data.get("yn") + "  \n" + ai_data.get("rem")))
@@ -222,9 +223,6 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
             st.session_state["game_dfs"][-1] = pd.concat([st.session_state["game_dfs"][-1], new_df], ignore_index=True)
             if st.session_state["debug"]:
                 st.write(st.session_state["game_dfs"][-1])
-
-            # update relevant game states for next innput 
-            st.session_state["q_idx"] += 1
 
     except AuthenticationError:
         st.error("API was not accept. Please check it.")

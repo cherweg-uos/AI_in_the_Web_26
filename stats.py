@@ -11,7 +11,7 @@ with total_tab:
     results_df = pd.DataFrame(
         {
             "Total Wins": [sum(st.session_state["results"] > 0)], # totally didn't rewrite the entire results array with np just to use masks...
-            "Total Losses": [sum(st.session_state["results"] < 0)],
+            "Total Losses": [-sum(st.session_state["results"] < 0)],
         }
     )
 
