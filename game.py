@@ -176,6 +176,9 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
             ai_response = st.write_stream(stream_text(ai_data.get("yn") + "  \n" + ai_data.get("rem")))
         st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
 
+        # update relevant game states for next innput 
+        st.session_state["q_idx"] += 1
+        
         if st.session_state["debug"]:
             st.write(ai_data)
 
@@ -198,9 +201,6 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
         st.session_state["game_dfs"][-1] = pd.concat([st.session_state["game_dfs"][-1], new_df], ignore_index=True)
         if st.session_state["debug"]:
             st.write(st.session_state["game_dfs"][-1])
-
-        # update relevant game states for next innput 
-        st.session_state["q_idx"] += 1
 
     except AuthenticationError:
         st.error("API was not accept. Please check it.")
