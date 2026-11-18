@@ -61,7 +61,7 @@ if "cards_names" not in st.session_state:
 # populate list for the cards base64 image data
 if "cards_base64" not in st.session_state:
     st.session_state["cards_base64"] = [] # start with empty list
-    for file in sorted(["cards/" + img for img in os.listdir("cards")]) :
+    for file in ["cards/" + img for img in sorted(os.listdir("cards"))] :
         with open(file, "rb") as image: # open image file
             encoded = base64.b64encode(image.read()).decode() # encode image
             st.session_state["cards_base64"].append(f"data:image/png;base64,{encoded}") #append to list

@@ -44,7 +44,7 @@ if ("number" not in st.session_state):
     st.session_state["number"] = random.randint(0,51)
     
 #das gibt den image path an 
-image_path = "cards/" +  os.listdir("cards")[st.session_state["number"]]
+image_path = "cards/" +  sorted(os.listdir("cards"))[st.session_state["number"]]
 #zum encoden zu base64
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
@@ -63,14 +63,11 @@ def stream_text(text: str):
         time.sleep(0.03)
 
 
-
-
-
 # debug info for selected card in sidbar
 if st.session_state["debug"]:
     st.divider()
     st.sidebar.text(f"The number is #{st.session_state['number']}, which is \"{st.session_state["cards_names"][st.session_state["number"]]}\"")
-    st.sidebar.image("cards/" +  os.listdir("cards")[st.session_state["number"]], width=250) #dateipfadliste[zufallsnummer]
+    st.sidebar.image("cards/" +  sorted(os.listdir("cards"))[st.session_state["number"]], width=250) #dateipfadliste[zufallsnummer]
     st.divider()
 
 st.subheader("Submit Final Guess")
