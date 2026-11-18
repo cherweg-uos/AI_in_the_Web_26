@@ -65,7 +65,7 @@ if "short_cards_names" not in st.session_state:
 
 # populate lists for the card filennames and paths
 if "cards_paths" not in st.session_state:
-    st.session_state["cards_paths"] = ["Task1/cards/" + filename for filename in os.listdir("Task1/cards")] # paths created from prefix
+    st.session_state["cards_paths"] = ["cards/" + filename for filename in os.listdir("cards")] # paths created from prefix
     print(f'st.session_state["cards_paths"] = {st.session_state["cards_paths"]}')
 
 # populate list for the cards base64 image data
