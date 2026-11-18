@@ -6,41 +6,28 @@ import os
 import time
 import math
 
-### -Api Validation stuff 
-def check_key_validity(ai_key = None) -> bool:
-    '''
-    checks the key in for valitity
-    if no key is provided it takes it from st.session_state["AI_KEY"]
-    '''
-    if ai_key == None:
-        ai_key = st.session_state["AI_KEY"]
-        print("Checking Session AI Key")
-    else:
-        print("Checking Provided AI Key")
-
-    with st.spinner():
-        time.sleep(0.5)
-
-
 st.set_page_config(layout="wide")
 
-if "AI_KEY" in st.session_state: #search for key in session storage
+time.sleep(1)
+
+if "AI_KEY" in st.session_state:
     ai_key = st.session_state["AI_KEY"]
     print("Loaded AI Key from session")
-elif os.path.exists(".streamlit/secrets.toml"): #search for a secrets file
-    if st.secrets and "AI_KEY" in st.secrets:
-        st.session_state["AI_KEY"] = st.secrets["AI_KEY"]
-        print("Loaded AI Key from secrets")
-else: #Ask for AI key
+elif "AI_KEY" in st.secrets:
+    st.session_state["AI_KEY"] = st.secrets["AI_KEY"]
+    print("Loaded AI Key from secrets")
+else:
     st.info("Please enter your API Key to start.")
     with st.form("api_key_form", clear_on_submit=True):
-        ai_key_input = st.text_input("Enter your AI Key:", type="password", required=True).strip()
+        ai_key_input = st.text_input("Enter your AI Key:", type="password", required=True)
         submit_button = st.form_submit_button("Verify", type="primary")
         if submit_button:
-            st.session_state["AI_KEY"] = ai_key_input
+            st.session_state["AI_KEY"] = ai_key_input.strip()
             print("Loaded AI Key from Input")
         else:
-            st.stop() # prevents check if no input is present
+            st.stop()
+
+print("Checking AI Key validity now")
 
 if ("valid_ai_key" not in st.session_state) or (st.session_state["valid_ai_key"] == False):
     with st.spinner("Checking AI Key", show_time=True):
