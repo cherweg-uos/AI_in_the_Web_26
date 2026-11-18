@@ -1,19 +1,24 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from openai import OpenAI, AuthenticationError, OpenAIError
 import base64
 import os
 import time
-import math
 
-def calculate_entropy(p_cards, i_cards) -> tuple[float, float]:
-    p_hit = 1/len(p_cards)
-    if p_hit == 1:
-        return 0, 0
-    p_miss = 1 - p_hit
-    local_entropy = -(p_hit * math.log2(p_hit) + p_miss * math.log2(p_miss))
-    global_entropy = (len(p_cards) / (len(p_cards) + len(i_cards)) * local_entropy)
-    return local_entropy, global_entropy
+def check_key_validity(ai_key = None) -> bool:
+    '''
+    checks the key in for valitity
+    if no key is provided it takes it from st.session_state["AI_KEY"]
+    '''
+    if ai_key == None:
+        ai_key = st.session_state["AI_KEY"]
+        print("Checking Session AI Key")
+    else:
+        print("Checking Provided AI Key")
+
+    with st.spinner():
+        time.sleep(0.5)
 
 st.set_page_config(layout="wide")
 
@@ -91,14 +96,12 @@ if "game_dfs" not in st.session_state:
     st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
                                                         "User Prompt": "",
                                                         "AI Response": "",
-                                                        "Possible Cards": st.session_state["p_cards"],
-                                                        "Impossible Cards": st.session_state["i_cards"],
-                                                        "Global Entropy": calculate_entropy(st.session_state["p_cards"], [])[1],
+                                                        "Global Entropy": round(np.log2(52), 2),
                                                         "Information Gain": "",
                                                         "Quality of Guess (AI)": "",
                                                         "Quality of Guess": ""}]))
 if "results" not in st.session_state:
-    st.session_state["results"] = [] # liste aller ergebnisse 1 = Win, 0 = Lose
+    st.session_state["results"] = np.array([], dtype='i2') # liste aller ergebnisse 1 = Win, 0 = Lose
 
 
 # react to clicked image

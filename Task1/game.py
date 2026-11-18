@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from st_clickable_images import clickable_images
 from openai import OpenAI, AuthenticationError, OpenAIError
 import random
-import math
+
 import base64
 import json 
 import time
@@ -17,7 +18,7 @@ client = OpenAI(
     api_key= st.session_state["AI_KEY"]
 )
 
-st.title("Guessing Game", text_alignment="center")
+st.title("Card Guessing Game", text_alignment="center")
 
 
 # function to call when resetting the game
@@ -26,27 +27,28 @@ def game_reset() -> None:
     st.session_state["last_guess"] = None # remove last guess
     st.session_state["q_idx"] = 0 # reset question index
     st.session_state["g_idx"] += 1 # increase the game index
+    st.session_state["messages"] = []
     st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
                                                         "User Prompt": "",
                                                         "AI Response": "",
-                                                        "Possible Cards": st.session_state["p_cards"],
-                                                        "Impossible Cards": st.session_state["i_cards"],
-                                                        "Global Entropy": calculate_entropy(st.session_state["p_cards"], [])[1],
+                                                        "Global Entropy": round(np.log2(52), 2),
                                                         "Information Gain": "",
                                                         "Quality of Guess (AI)": "",
                                                         "Quality of Guess": ""}])) # add new game df to game_dfs
     st.session_state["reset"] = True
     st.rerun()
-    
 
-def calculate_entropy(p_cards, i_cards) -> tuple[float, float]:
-    p_hit = 1/len(p_cards)
-    if p_hit == 1:
-        return 0, 0
-    p_miss = 1 - p_hit
-    local_entropy = -(p_hit * math.log2(p_hit) + p_miss * math.log2(p_miss))
-    global_entropy = (len(p_cards) / (len(p_cards) + len(i_cards)) * local_entropy)
-    return local_entropy, global_entropy
+# function to calculate entropy
+def calculate_entropy(p_cards, deck_size=52) -> float:
+    n = len(p_cards)
+    global_entropy = np.log2(n)
+    return round(global_entropy, 2)
+
+def calculate_ig(p_cards, deck_size=52) -> float:
+    n = len(p_cards)
+    p = n / deck_size
+    ig = -p * np.log2(p) - (1-p) * np.log2(1-p)
+    return round(ig, 2)
 
 if st.session_state["reset"]:
     st.info("Game has been Reset")
@@ -64,10 +66,9 @@ if ("number" not in st.session_state) or resetbuton:
     
 # debug info for selected card
 if st.session_state["debug"]:
-    st.text(f"The number is #{st.session_state['number']}, which is \"{st.session_state["cards_names"][st.session_state["number"]]}\"")
-    st.image(st.session_state["cards_paths"][st.session_state["number"]], width=250) #dateipfadliste[zufallsnummer]
-
-st.divider()
+    st.sidebar.divider()
+    st.sidebar.text(f"The Card is #{st.session_state['number']}, which is \"{st.session_state["cards_names"][st.session_state["number"]]}\"")
+    st.sidebar.image(st.session_state["cards_paths"][st.session_state["number"]], width=250) #dateipfadliste[zufallsnummer]
 
 st.subheader("Submit Final Guess")
 # clickable display of all cards
@@ -97,10 +98,10 @@ if submitted:
         st.success("Yeah! You did it")
         st.balloons()
         del st.session_state['number']
-        st.session_state["results"].append(1)
+        np.append(st.session_state["results"], 1)
     else:
         st.error("Oh no. The Card is wrong.")
-        st.session_state["results"].append(-1)
+        np.append(st.session_state["results"], -1)
     with st.spinner("Game is being reset …"):
         time.sleep(2) # wait a bit before forced reset
         game_reset() #forced reset so you can't add guesses once the game is over
@@ -159,50 +160,51 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
                 max_tokens=800
             )
 
-        # load ai response jsonn
-        ai_data = json.loads(response.choices[0].message.content)
 
-        # output response as an asisstant side chat bubble
-        with st.chat_message("assistant"):
-            ai_response = st.write_stream([ai_data.get("yn")])
-        st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
-        with st.chat_message("assistant"):
-            ai_remark = st.write_stream([ai_data.get("rem")])
-        st.session_state.messages.append({"role": "assistant", "content": ai_remark}) # add ai_remark to chat history
+        if response.choices[0].message.content is None: # no message to display
+            with chat_container.chat_message("assistant"):
+                ai_response = st.write_stream(stream_text("Great, you broke the AI  \n Reason: " + response.choices[0].finish_reason))
+            st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
 
-        if st.session_state["debug"]:
-            st.write(ai_data)
+        else:
+            # load ai response jsonn
+            ai_data = json.loads(response.choices[0].message.content)
 
-        # update possible and impossile cards
-        eliminated = set(ai_data.get("elim", []))
-        st.session_state["p_cards"] = [c for c in st.session_state["p_cards"] if c not in eliminated] # add only non eliminated cards back
-        st.session_state["i_cards"].extend(eliminated) # add new excluded cards
+            # output response as an asisstant chat bubble
+            with chat_container.chat_message("assistant"):
+                ai_response = st.write_stream(stream_text(ai_data.get("yn") + "  \n" + ai_data.get("rem")))
+            st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
 
-        # calculate entropy and information gain
-        _, global_entropy = calculate_entropy(st.session_state["p_cards"], st.session_state["i_cards"])
-        information_gain = st.session_state["game_dfs"][-1]["Global Entropy"].iloc[-1] - global_entropy
+            if st.session_state["debug"]:
+                st.write(ai_data)
 
-        # log all data in new df
-        new_data = {"Question #": st.session_state["q_idx"],
-                    "User Prompt": user_prompt,
-                    "AI Response": ai_data.get("yn"),
-                    "Possible Cards": st.session_state["p_cards"],
-                    "Impossible Cards": st.session_state["i_cards"],
-                    "Global Entropy": global_entropy,
-                    "Information Gain": information_gain,
-                    "Quality of Guess (AI)": ai_data.get("q"),
-                    "Quality of Guess": ""}
-        new_df = pd.DataFrame([new_data])
-        if st.session_state["debug"]:
-            st.write(new_df)
+            # update possible and impossile cards
+            if ai_data.get("yn") == "Yes":
+                # if target has property keep only the card in the list that match
+                st.session_state["p_cards"] = [c for c in st.session_state["p_cards"] if c in set(ai_data.get("matching", []))]
 
-        # concateate to corresponding game_dfs(used to just append but pandas no likey)
-        st.session_state["game_dfs"][-1] = pd.concat([st.session_state["game_dfs"][-1], new_df], ignore_index=True)
-        if st.session_state["debug"]:
-            st.write(st.session_state["game_dfs"][-1])
+            elif ai_data.get("yn") == "No":
+                #if target doesn't have property remove all matching cards from the list
+                st.session_state["p_cards"] = [c for c in st.session_state["p_cards"] if c not in set(ai_data.get("matching", []))]
 
-        # update relevant game states for next innput 
-        st.session_state["q_idx"] += 1
+            # log all data in new df
+            new_data = {"Question #": st.session_state["q_idx"],
+                        "User Prompt": user_prompt,
+                        "AI Response": ai_data.get("yn"),
+                        "Global Entropy": calculate_entropy(st.session_state["p_cards"]),
+                        "Information Gain": calculate_ig(st.session_state["p_cards"]),
+                        "Quality of Guess (AI)": ai_data.get("q"),
+                        "Quality of Guess": information_gain * 100, # would have liked to do more calc here but julian no happy
+                        "Possible Cards": st.session_state["p_cards"]}
+            new_df = pd.DataFrame([new_data])
+
+            # concateate to corresponding game_dfs(used to just append but pandas no likey)
+            st.session_state["game_dfs"][-1] = pd.concat([st.session_state["game_dfs"][-1], new_df], ignore_index=True)
+            if st.session_state["debug"]:
+                st.write(st.session_state["game_dfs"][-1])
+
+            # update relevant game states for next innput 
+            st.session_state["q_idx"] += 1
 
     except AuthenticationError:
         st.error("API was not accept. Please check it.")

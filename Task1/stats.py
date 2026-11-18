@@ -3,39 +3,33 @@ import pandas as pd
 
 #gibt oben beim tab den Namen #nope gibt einfach nur überschrift, name ist in main.py
 st.header("Statistics")
-st.divider()
-st.subheader("Total")
 
-results_df = pd.DataFrame(
-    {
-        "Wins": [1 if x == 1 else 0 for x in st.session_state["results"]],
-        "Losses": [-1 if x == -1 else 0 for x in st.session_state["results"]],
-    }
-)
-results_df.index += 1 # shift game indices by one for display
+total_tab, game_tab = st.tabs(["Total", "Per Game"])
 
-total_results_df = pd.DataFrame(
-    {
-        "Total Wins": [sum(results_df["Wins"])],
-        "Total Losses": [sum(results_df["Losses"])],
-    }
-)
+with total_tab:
 
-st.bar_chart(total_results_df, x=None, y=["Total Losses", "Total Wins"], y_label="Score", color=["red","green"], horizontal=True)
+    results_df = pd.DataFrame(
+        {
+            "Total Wins": [sum(st.session_state["results"] > 0)], # totally didn't rewrite the entire results array with np just to use masks...
+            "Total Losses": [sum(st.session_state["results"] < 0)],
+        }
+    )
 
-st.dataframe(total_results_df, hide_index=True)
+    st.subheader("Total Wins/Losses")
+    st.bar_chart(results_df, x=None, y=["Total Losses", "Total Wins"], y_label="Score", color=["red","green"], horizontal=True)
+    st.dataframe(results_df, hide_index=True)
 
-st.divider()
-st.subheader("Per Game")
+    st.divider()
 
-st.bar_chart(results_df, x=None, y=["Losses", "Wins"], x_label="Game #", y_label="Score", color=["red","green"] )
+    st.subheader("Number of Questions per Game")
+    st.bar_chart({f"Game {i + 1}": int(g_df["Question #"].iloc[-1]) for i, g_df in enumerate(st.session_state["game_dfs"])})
 
-tab_names = [f"Game {i+1}" for i, _ in enumerate(st.session_state["game_dfs"])]
-tabs = st.tabs(tab_names)
-
-for i, tab in enumerate(tabs):
+with game_tab:
+    st.write("Select Game:")
+    idx = st.pagination(len(st.session_state["game_dfs"]))
+    # when populating page, add correct result to Header
     try:
-        match st.session_state["results"][i]:
+        match st.session_state["results"][idx - 1]:
             case 1:
                 game_state = "Win"
             case 0:
@@ -44,5 +38,5 @@ for i, tab in enumerate(tabs):
                 game_state = "Loss"
     except:
         game_state = "Unfinished"
-    tab.subheader(f'Game {i+1}: {game_state}')
-    tab.write(st.session_state["game_dfs"][i])
+    st.subheader(f'Game {idx}: {game_state}')
+    st.dataframe(st.session_state["game_dfs"][idx - 1], hide_index=True)
