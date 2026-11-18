@@ -168,39 +168,41 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
                 max_tokens=800
             )
 
-        # load ai response jsonn
-        ai_data = json.loads(response.choices[0].message.content)
+        if response.choices[0].message.content is None: # no message to display
+            with chat_container.chat_message("assistant"):
+                ai_response = st.write_stream(stream_text("Great, you broke the AI. Please try again with a differnt Question.  \n Reason: " + response.choices[0].finish_reason))
+            st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
 
-        # output response as an asisstant chat bubble
-        with chat_container.chat_message("assistant"):
-            ai_response = st.write_stream(stream_text(ai_data.get("yn") + "  \n" + ai_data.get("rem")))
-        st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
+        else:
+            # load ai response jsonn
+            ai_data = json.loads(response.choices[0].message.content)
 
-        # update relevant game states for next innput 
-        st.session_state["q_idx"] += 1
-        
-        if st.session_state["debug"]:
-            st.write(ai_data)
+            # output response as an asisstant chat bubble
+            with chat_container.chat_message("assistant"):
+                ai_response = st.write_stream(stream_text(ai_data.get("yn") + "  \n" + ai_data.get("rem")))
+            st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
 
-        # update possible and impossile cards
-        # calculate entropy and information gain
+            # update relevant game states for next innput 
+            st.session_state["q_idx"] += 1
+            
+            if st.session_state["debug"]:
+                st.write(ai_data)
 
+            # log all data in new df
+            new_data = {"Question #": st.session_state["q_idx"],
+                        "User Prompt": user_prompt,
+                        "AI Response": ai_data.get("yn"),
+                        "Quality of Guess (AI)": ai_data.get("q"),
+                        "Quality of Guess": ""
+                        }
+            new_df = pd.DataFrame([new_data])
+            if st.session_state["debug"]:
+                st.write(new_df)
 
-        # log all data in new df
-        new_data = {"Question #": st.session_state["q_idx"],
-                    "User Prompt": user_prompt,
-                    "AI Response": ai_data.get("yn"),
-                    "Quality of Guess (AI)": ai_data.get("q"),
-                    "Quality of Guess": ""
-                    }
-        new_df = pd.DataFrame([new_data])
-        if st.session_state["debug"]:
-            st.write(new_df)
-
-        # concateate to corresponding game_dfs(used to just append but pandas no likey)
-        st.session_state["game_dfs"][-1] = pd.concat([st.session_state["game_dfs"][-1], new_df], ignore_index=True)
-        if st.session_state["debug"]:
-            st.write(st.session_state["game_dfs"][-1])
+            # concateate to corresponding game_dfs(used to just append but pandas no likey)
+            st.session_state["game_dfs"][-1] = pd.concat([st.session_state["game_dfs"][-1], new_df], ignore_index=True)
+            if st.session_state["debug"]:
+                st.write(st.session_state["game_dfs"][-1])
 
     except AuthenticationError:
         st.error("API was not accept. Please check it.")
