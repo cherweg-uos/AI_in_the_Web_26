@@ -65,7 +65,7 @@ if "AI_KEY" not in st.session_state:
 ### -Initalisierung 
 # populate lists for the card filennames and paths; important for displaying the name 
 if "cards_names" not in st.session_state:
-    st.session_state["cards_names"] = [] # start with empty lsit
+    st.session_state["cards_names"] = [] # start with empty list
     for suit in ["Clubs", "Diamonds", "Hearts", "Spades"]: # keep this order to match file order
         for rank in ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"]: # keep this order to match file order
             st.session_state["cards_names"].append(f"{rank} of {suit}") # add card name RANK of SUIT to list
@@ -89,7 +89,7 @@ if "reset" not in st.session_state:
 if "g_idx" not in st.session_state:
     st.session_state["g_idx"] = 0 # zähler für spielenummer
 
-# initialise data if we don't have history
+# initialize data if we don't have history
 if "q_idx" not in st.session_state:
     st.session_state["q_idx"] = 1
     
@@ -126,6 +126,7 @@ st.session_state["debug"] = st.sidebar.toggle("Activate Debug", st.session_state
 gamepage = st.Page("game.py", title="Game", icon="🎮")
 statspage = st.Page("stats.py", title="Stats", icon="📈")
 
+#bei debug true die debug seite anzeigen 
 if st.session_state["debug"] == True: 
     debug = st.Page("debug.py", title="Debug", icon="🚧")
     bug = st.navigation(pages=[gamepage, statspage,debug])
