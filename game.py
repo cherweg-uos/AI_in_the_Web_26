@@ -179,7 +179,7 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
 
         if response.choices[0].message.content is None: # no message to display
             with chat_container.chat_message("assistant"):
-                ai_response = st.write_stream(stream_text("Great, you broke the AI  \n Reason: " + response.choices[0].finish_reason))
+                ai_response = st.write_stream(stream_text("Great, you broke the AI. Please try again with a differnt Question.  \n Reason: " + response.choices[0].finish_reason))
             st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
 
         else:
@@ -210,7 +210,7 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
                         "Global Entropy": calculate_entropy(st.session_state["p_cards"]),
                         "Information Gain": calculate_ig(st.session_state["p_cards"]),
                         "Quality of Guess (AI)": ai_data.get("q"),
-                        "Quality of Guess": information_gain * 100, # would have liked to do more calc here but julian no happy
+                        "Quality of Guess": int(calculate_ig(st.session_state["p_cards"])), # 1 bit gain = 100%
                         "Possible Cards": st.session_state["p_cards"]}
             new_df = pd.DataFrame([new_data])
 
