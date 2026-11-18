@@ -29,20 +29,27 @@ def game_reset() -> None:
     st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
                                                         "User Prompt": "",
                                                         "AI Response": "",
-                                                        "Global Entropy": math.log2(52),
-                                                        "Information Gain": "",
                                                         "Quality of Guess (AI)": "",
-                                                        "Quality of Guess": "",
-                                                        "Possible Cards": st.session_state["p_cards"]}])) # add new game df to game_dfs
+                                                        }])) # add new game df to game_dfs
     st.session_state["reset"] = True
     st.rerun()
 
-# function to calculate entropy
-def calculate_entropy(p_cards, deck_size=52) -> tuple[float, float]:
-    n = len(p_cards)
-    global_entropy = math.log2(n)
-    return global_entropy
-
+# create a new random number if we don't have one yet / und ein knopf wird erstelt 
+resetbuton = st.button("Restart the Game", width="stretch")
+if resetbuton:
+    st.session_state["results"].append(0)
+    game_reset()
+if ("number" not in st.session_state):
+    st.session_state["number"] = random.randint(0,51)
+    
+#das gibt den image path an 
+image_path = "cards/" +  os.listdir("cards")[st.session_state["number"]]
+#zum encoden zu base64
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode("utf-8")
+#speicher von base64 image 
+base64_image = encode_image(image_path)
 
 if st.session_state["reset"]:
     st.info("Game has been Reset")
@@ -52,23 +59,17 @@ if st.session_state["reset"]:
 def stream_text(text: str):
     for word in text.split(" "):
         yield word + " "
-        time.sleep(0.05)
+        time.sleep(0.03)
 
-# create a new random number if we don't have one yet / und ein knopf wird erstelt 
-resetbuton = st.button("Restart the Game", width="stretch")
-if resetbuton:
-    st.session_state["results"].append(0)
-    game_reset()
 
-#falls noch keine nummer festgelegt ist wird hier random eine zwischen 0 and 51
-if ("number" not in st.session_state) or resetbuton:
-    st.session_state["number"] = random.randint(0,51)
-    
+
+
+
 # debug info for selected card in sidbar
 if st.session_state["debug"]:
     st.divider()
     st.sidebar.text(f"The number is #{st.session_state['number']}, which is \"{st.session_state["cards_names"][st.session_state["number"]]}\"")
-    st.sidebar.image(st.session_state["cards_paths"][st.session_state["number"]], width=250) #dateipfadliste[zufallsnummer]
+    st.sidebar.image("cards/" +  os.listdir("cards")[st.session_state["number"]], width=250) #dateipfadliste[zufallsnummer]
     st.divider()
 
 st.subheader("Submit Final Guess")
@@ -138,21 +139,17 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
     # generate new system promt
     system_prompt = f"""
     You are a strict, infallible referee for a 52-card guessing game.
-    Target Card in Image: {st.session_state["cards_names"][st.session_state["number"]]} ({st.session_state["short_cards_names"][st.session_state["number"]]})
-    Current Remaining Candidates: {st.session_state["p_cards"]}
 
     Rules:
     1. "thought": In exactly 1 short sentence briefly analyze if the Target Card satisfies the user's question. 
     2. "yn": Must be strictly "Yes" or "No".
-    3. "matching": List all card codes from Current Candidates that satisfy the user's question (e.g. all face cards and cards rank < 3).
-    4. "rem": Short Sarcastic remark. DO NOT any features of the Target Card here.
-    5. "q": Score question quality from 0 to 100 (100 = 50/50 split).
+    3. "rem": Short Sarcastic remark. DO NOT any features of the Target Card here.
+    4. "q": Score question quality from 0 to 100 (100 = 50/50 split).
 
     JSON Output Requirements (Mandatory):
     {{
       "thought": "<string>",
       "yn": "Yes" | "No",
-      "matching": ["<card code>", ...],
       "rem": "<string>"
       "q": <integer 0-100>,
     }}
@@ -162,10 +159,11 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
         with st.spinner("Answer is being created …"):
             time.sleep(0.5)
             response = client.chat.completions.create(
-                model="Qwen/Qwen3.8-27B-FP8",
+                model="google/gemma-4-E4B-it",
                 messages=[
                     {"role": "system","content": system_prompt},
-                    {"role": "user", "content": user_prompt}
+                    {"role": "user", "content": user_prompt},
+                    {"role": "user", "content": [{"type": "image_url", "image_url": {"url": f"data:image/svg+xml;base64,{base64_image}"}}],},
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.0,
@@ -184,28 +182,16 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
             st.write(ai_data)
 
         # update possible and impossile cards
-        if ai_data.get("yn") == "Yes":
-            # if target has property keep only the card in the list that match
-            st.session_state["p_cards"] = [c for c in st.session_state["p_cards"] if c in set(ai_data.get("matching", []))]
-
-        elif ai_data.get("yn") == "No":
-            #if target doesn't have property remove all matching cards from the list
-            st.session_state["p_cards"] = [c for c in st.session_state["p_cards"] if c not in set(ai_data.get("matching", []))]
-
-
         # calculate entropy and information gain
-        global_entropy = calculate_entropy(st.session_state["p_cards"])
-        information_gain = st.session_state["game_dfs"][-1]["Global Entropy"].iloc[-1] - global_entropy
+
 
         # log all data in new df
         new_data = {"Question #": st.session_state["q_idx"],
                     "User Prompt": user_prompt,
                     "AI Response": ai_data.get("yn"),
-                    "Global Entropy": global_entropy,
-                    "Information Gain": information_gain,
                     "Quality of Guess (AI)": ai_data.get("q"),
-                    "Quality of Guess": "",
-                    "Possible Cards": st.session_state["p_cards"]}
+                    "Quality of Guess": ""
+                    }
         new_df = pd.DataFrame([new_data])
         if st.session_state["debug"]:
             st.write(new_df)

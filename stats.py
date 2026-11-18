@@ -25,10 +25,10 @@ st.bar_chart(total_results_df, x=None, y=["Total Losses", "Total Wins"], y_label
 
 st.dataframe(total_results_df, hide_index=True)
 
-st.divider()
-st.subheader("Per Game")
+st.subheader("Number of Questions per Game")
+st.bar_chart({f"Game {i + 1}": int(g_df["Question #"].iloc[-1]) for i, g_df in enumerate(st.session_state["game_dfs"])})
 
-st.bar_chart(results_df, x=None, y=["Losses", "Wins"], x_label="Game #", y_label="Score", color=["red","green"] )
+
 
 tab_names = [f"Game {i+1}" for i, _ in enumerate(st.session_state["game_dfs"])]
 tabs = st.tabs(tab_names)

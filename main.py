@@ -6,6 +6,7 @@ import os
 import time
 import math
 
+### -Api Validation stuff 
 def check_key_validity(ai_key = None) -> bool:
     '''
     checks the key in for valitity
@@ -20,12 +21,6 @@ def check_key_validity(ai_key = None) -> bool:
     with st.spinner():
         time.sleep(0.5)
 
-    if p_hit == 1:
-        return 0, 0
-    p_miss = 1 - p_hit
-    local_entropy = -(1/52 * math.log2(1/52) + 51/52 * math.log2(51/52))
-    global_entropy = (1/52 * local_entropy)
-    return local_entropy, global_entropy
 
 st.set_page_config(layout="wide")
 
@@ -63,12 +58,12 @@ if ("valid_ai_key" not in st.session_state) or (st.session_state["valid_ai_key"]
 
 # stop page and wait for input if no valid AI Key at this point
 # if incorrect key in secrets.toml then ther won't be input available and page just stops
-# hopefully users with .toml will be smart enough to understand
+# hopefully users with .toml will be smart enough to understand, fingers crossed 
 if "AI_KEY" not in st.session_state:
     st.stop() 
 
-
-# populate lists for the card filennames and paths
+### -Initalisierung 
+# populate lists for the card filennames and paths; important for displaying the name 
 if "cards_names" not in st.session_state:
     st.session_state["cards_names"] = [] # start with empty lsit
     for suit in ["Clubs", "Diamonds", "Hearts", "Spades"]: # keep this order to match file order
@@ -76,27 +71,15 @@ if "cards_names" not in st.session_state:
             st.session_state["cards_names"].append(f"{rank} of {suit}") # add card name RANK of SUIT to list
     print(f'st.session_state["cards_names"] = {st.session_state["cards_names"]}')
 
-# attempt to improve AI performance
-if "short_cards_names" not in st.session_state:
-    st.session_state["short_cards_names"] = [] # start with empty lsit
-    for suit in ["C", "D", "H", "S"]: # keep this order to match file order
-        for rank in ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]: # keep this order to match file order
-            st.session_state["short_cards_names"].append(f"{rank}{suit}") # add card name RANK of SUIT to list
-    print(f'st.session_state["short_cards_names"] = {st.session_state["short_cards_names"]}')
-
-# populate lists for the card filennames and paths
-if "cards_paths" not in st.session_state:
-    st.session_state["cards_paths"] = ["cards/" + filename for filename in os.listdir("cards")] # paths created from prefix
-    print(f'st.session_state["cards_paths"] = {st.session_state["cards_paths"]}')
-
 # populate list for the cards base64 image data
 if "cards_base64" not in st.session_state:
     st.session_state["cards_base64"] = [] # start with empty list
-    for file in st.session_state["cards_paths"]:
+    for file in ["cards/" + img for img in os.listdir("cards")] :
         with open(file, "rb") as image: # open image file
             encoded = base64.b64encode(image.read()).decode() # encode image
             st.session_state["cards_base64"].append(f"data:image/png;base64,{encoded}") #append to list
     print(f'st.session_state["cards_base64"] = DO NOT PRINT BASE 64 IMG DATA YOU STUPID') # this will no longer spam the console
+
 
 
 if "reset" not in st.session_state:
@@ -109,18 +92,16 @@ if "g_idx" not in st.session_state:
 # initialise data if we don't have history
 if "q_idx" not in st.session_state:
     st.session_state["q_idx"] = 1
-    st.session_state["p_cards"] = st.session_state["short_cards_names"] # all cards potenially possible
+    
 
 if "game_dfs" not in st.session_state:
     st.session_state["game_dfs"] = [] # hier gehöre die df's für jeden durchlauf rein
     st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
                                                         "User Prompt": "",
                                                         "AI Response": "",
-                                                        "Global Entropy": math.log2(52),
-                                                        "Information Gain": "",
                                                         "Quality of Guess (AI)": "",
-                                                        "Quality of Guess": "",
-                                                        "Possible Cards": st.session_state["p_cards"]}]))
+                                                        "Quality of Guess": ""
+                                                        }]))
 if "results" not in st.session_state:
     st.session_state["results"] = [] # liste aller ergebnisse 1 = Win, 0 = Lose
 
