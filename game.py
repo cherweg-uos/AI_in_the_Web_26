@@ -26,6 +26,7 @@ def game_reset() -> None:
     st.session_state["last_guess"] = None # remove last guess
     st.session_state["q_idx"] = 0 # reset question index
     st.session_state["g_idx"] += 1 # increase the game index
+    st.session_state["messages"] = []
     st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
                                                         "User Prompt": "",
                                                         "AI Response": "",
@@ -144,7 +145,7 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
     1. "thought": In exactly 1 short sentence briefly analyze if the Target Card satisfies the user's question. 
     2. "yn": Must be strictly "Yes" or "No".
     3. "rem": Short Sarcastic remark. DO NOT any features of the Target Card here.
-    4. "q": Score question quality from 0 to 100 (100 = 50/50 split).
+    4. "q": Score on the question quality from 0 to 100 (100 = 50/50 split).
 
     JSON Output Requirements (Mandatory):
     {{
