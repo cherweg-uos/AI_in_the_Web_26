@@ -89,7 +89,6 @@ if "g_idx" not in st.session_state:
 if "q_idx" not in st.session_state:
     st.session_state["q_idx"] = 1
     st.session_state["p_cards"] = st.session_state["short_cards_names"] # all cards potenially possible
-    st.session_state["i_cards"] = [] # no impossible cards
 
 if "game_dfs" not in st.session_state:
     st.session_state["game_dfs"] = [] # hier gehöre die df's für jeden durchlauf rein

@@ -4,7 +4,6 @@ import numpy as np
 from st_clickable_images import clickable_images
 from openai import OpenAI, AuthenticationError, OpenAIError
 import random
-
 import base64
 import json 
 import time
@@ -54,6 +53,12 @@ if st.session_state["reset"]:
     st.info("Game has been Reset")
     st.session_state["reset"] = False
 
+# function to convert text into word stream
+def stream_text(text: str):
+    for word in text.split(" "):
+        yield word + " "
+        time.sleep(0.05)
+
 # create a new random number if we don't have one yet / und ein knopf wird erstelt 
 resetbuton = st.button("Restart the Game", width="stretch")
 if resetbuton:
@@ -85,7 +90,7 @@ st.session_state["clicked"] = clickable_images(
     img_style={"max-width": "100%", "height": "auto", "object-fit": "contain"},
 )
 
-# Submit buton displaying selected card
+# Submit buton naming selected card
 submit_buton_text = f"Submit **{st.session_state["cards_names"][st.session_state["clicked"]]}** as final guess" if st.session_state["clicked"] > -1 else "No Card Selected"
 submitted = st.button(submit_buton_text, type="primary", disabled=(st.session_state["clicked"] <= -1), width="stretch")
  
@@ -110,13 +115,27 @@ st.divider()
 
 st.subheader("Ask a LLM for hints")
 
+chat_container = st.container(border=True)
 # Display chat messages from history on app rerun
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
+for message in st.session_state["messages"]:
+    with chat_container.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only)"):
-    with st.chat_message("user"): # in a user side chat bubble
+if not st.session_state["messages"]: # if there is nothing in chat history
+    with chat_container.chat_message("assistant"):
+        welcome_message = st.write_stream(stream_text("""
+        Hello  \n
+        I am your Game Master for this Card Guessing Game  \n
+        I have now selected a random card out of the ones you can see above.  \n
+        Your Task is to guess which one it is.  \n
+        You get to ask me 5 Questions rgarding the Target card, which I will then Answer with Yes or No.
+        """))
+    st.session_state["messages"].append({"role": "assistant", "content": welcome_message})
+
+chat_container.divider()
+
+if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only)", submit_mode="disable"):
+    with chat_container.chat_message("user"): # in a user side chat bubble
         st.markdown(user_prompt) # display the prompt
     st.session_state["messages"].append({"role": "user", "content": user_prompt}) # Add user_prompt to chat history
     
@@ -129,20 +148,17 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
     Rules:
     1. "thought": In exactly 1 short sentence briefly analyze if the Target Card satisfies the user's question. 
     2. "yn": Must be strictly "Yes" or "No".
-    3. "elim": A Python-style list of card names from the "Current Remaining Candidates" that must be ELIMINATED based on the user's question and your "yn" answer. 
-       - If yn is "Yes": eliminate all remaining candidates that DO NOT match the question.
-       - If yn is "No": eliminate all remaining candidates that DO match the question.
-       - CRITICAL: The Target Card must NEVER be in "elim".
-    4. "q": Score question quality from 0 to 100 (100 = 50/50 split).
-    5. "rem": Short Sarcastic remark.
+    3. "matching": List all card codes from Current Candidates that satisfy the user's question (e.g. all face cards and cards rank < 3).
+    4. "rem": Short Sarcastic remark. DO NOT any features of the Target Card here.
+    5. "q": Score question quality from 0 to 100 (100 = 50/50 split).
 
     JSON Output Requirements (Mandatory):
     {{
       "thought": "<string>",
       "yn": "Yes" | "No",
-      "elim": ["<Card Name>", ...],
-      "q": <integer 0-100>,
+      "matching": ["<card code>", ...],
       "rem": "<string>"
+      "q": <integer 0-100>,
     }}
     """
     # try getting AI response
