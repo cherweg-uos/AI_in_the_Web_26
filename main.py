@@ -6,10 +6,9 @@ import os
 import time
 import math
 
-
-
-
 st.set_page_config(layout="wide")
+
+st.session_state["AI_KEY"] = None
 
 if "AI_KEY" in st.session_state: #search for key in session storage
     ai_key = st.session_state["AI_KEY"]
