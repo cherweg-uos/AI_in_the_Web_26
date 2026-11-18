@@ -8,8 +8,6 @@ import math
 
 st.set_page_config(layout="wide")
 
-st.session_state["AI_KEY"] = None
-
 if "AI_KEY" in st.session_state: #search for key in session storage
     ai_key = st.session_state["AI_KEY"]
     print("Loaded AI Key from session")
@@ -28,20 +26,7 @@ else: #Ask for AI key
         else:
             st.stop() # prevents check if no input is present
 
-### -Api Validation stuff 
-def check_key_validity(ai_key = None) -> bool:
-    '''
-    checks the key in for valitity
-    if no key is provided it takes it from st.session_state["AI_KEY"]
-    '''
-    if ai_key == None:
-        ai_key = st.session_state["AI_KEY"]
-        print("Checking Session AI Key")
-    else:
-        print("Checking Provided AI Key")
-
-    with st.spinner():
-        time.sleep(0.5)
+print("AI Key Should be loaded by now.")
 
 if ("valid_ai_key" not in st.session_state) or (st.session_state["valid_ai_key"] == False):
     with st.spinner("Checking AI Key", show_time=True):
