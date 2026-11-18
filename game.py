@@ -113,6 +113,10 @@ if submitted:
         
 st.divider()
 
+progress = (round(np.log2(52), 2) - st.session_state["game_dfs"][-1]["Global Entropy"].iloc[-1])/round(np.log2(52), 2)
+st.progress(progress, text="Game Progress")
+
+
 st.subheader("Ask a LLM for hints")
 
 chat_container = st.container(border=True)
@@ -142,7 +146,7 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
     # generate new system promt
     system_prompt = f"""
     You are a strict, infallible referee for a 52-card guessing game.
-    Target Card in Image: {st.session_state["cards_names"][st.session_state["number"]]} ({st.session_state["short_cards_names"][st.session_state["number"]]})
+    Target Card: {st.session_state["cards_names"][st.session_state["number"]]} ({st.session_state["short_cards_names"][st.session_state["number"]]})
     Current Remaining Candidates: {st.session_state["p_cards"]}
 
     Rules:
@@ -210,7 +214,7 @@ if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only
                         "Global Entropy": calculate_entropy(st.session_state["p_cards"]),
                         "Information Gain": calculate_ig(st.session_state["p_cards"]),
                         "Quality of Guess (AI)": ai_data.get("q"),
-                        "Quality of Guess": int(calculate_ig(st.session_state["p_cards"])), # 1 bit gain = 100%
+                        "Quality of Guess": int(calculate_ig(st.session_state["p_cards"])*100), # 1 bit gain = 100%
                         "Possible Cards": st.session_state["p_cards"]}
             new_df = pd.DataFrame([new_data])
 
