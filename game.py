@@ -3,13 +3,10 @@ import pandas as pd
 from st_clickable_images import clickable_images
 from openai import OpenAI, AuthenticationError, OpenAIError
 import random
-import math
 import base64
 import json 
 import time
 import os 
-
-
 
 # pass the entered key
 client = OpenAI(
