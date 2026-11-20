@@ -17,10 +17,10 @@ results_df.index += 1 # shift game indices by one for display
 
 total_results_df = pd.DataFrame(
     {
-        "Total Wins": sum(results_df["Wins"]),
-        "Total Losses": sum(results_df["Losses"]),
-        "Games Played": len(st.session_state["game_dfs"]),
-        "Avg. Questions per Game": mean([g_df["Question #"].iloc[-1] for g_df in st.session_state["game_dfs"]]),
+        "Total Wins": [sum(results_df["Wins"])],
+        "Total Losses": [sum(results_df["Losses"])],
+        "Games Played": [len(st.session_state["game_dfs"])],
+        "Avg. Questions per Game": [mean([g_df["Question #"].iloc[-1] for g_df in st.session_state["game_dfs"]])],
     }
 )
 
