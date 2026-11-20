@@ -19,7 +19,7 @@ total_results_df = pd.DataFrame(
     {
         "Total Wins": [sum(results_df["Wins"])],
         "Total Losses": [sum(results_df["Losses"])],
-        "Games Played": [len(st.session_state["game_dfs"])],
+        "Games Finished": [len(st.session_state["game_dfs"])-1],
         "Avg. Questions per Game": [mean([g_df["Question #"].iloc[-1] for g_df in st.session_state["game_dfs"]])],
     }
 )
