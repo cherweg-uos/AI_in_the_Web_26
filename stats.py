@@ -28,8 +28,9 @@ with total_tab:
     st.subheader("Number of Questions per Game")
     st.bar_chart({f"Game {i + 1}": int(g_df["Question #"].iloc[-1]) for i, g_df in enumerate(st.session_state["game_dfs"])})
 
-    if "c" not in st.session_state: # i hate this
-        st.session_state["c"] = 0
+    c = 0
+    if "c" in st.session_state:
+        c = st.session_state["c"]
     # take new cumsum if closer to 0, else take previous cumsum 
     offset = [c if abs(c := c + r) < abs(c - r) else c - r for r in st.session_state["results"]] 
     st.bar_chart(
@@ -40,6 +41,7 @@ with total_tab:
         }, 
         color=["#0000", "green", "red"]
     )
+    st.session_state["c"] = c
 
 with game_tab:
     st.write("Select Game:")
