@@ -81,8 +81,7 @@ if "game_dfs" not in st.session_state:
     st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
                                                         "User Prompt": "",
                                                         "AI Response": "",
-                                                        "Quality of Guess (AI)": "",
-                                                        "Quality of Guess": ""
+                                                        "Quality of Guess (AI)": ""
                                                         }]))
     
 if "results" not in st.session_state:
