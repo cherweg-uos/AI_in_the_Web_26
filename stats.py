@@ -28,20 +28,10 @@ with total_tab:
     st.subheader("Number of Questions per Game")
     st.bar_chart({f"Game {i + 1}": int(g_df["Question #"].iloc[-1]) for i, g_df in enumerate(st.session_state["game_dfs"])})
 
-    c = 0
-    if "c" in st.session_state:
-        c = st.session_state["c"]
-    # take new cumsum if closer to 0, else take previous cumsum 
-    offset = [c if abs(c := c + r) < abs(c - r) else c - r for r in st.session_state["results"]] 
-    st.bar_chart(
-        {
-            "Offset": offset,
-            "Wins": [r if r > 0 else 0 for r in st.session_state["results"]],
-            "Losses": [r if r < 0 else 0 for r in st.session_state["results"]],
-        }, 
-        color=["#0000", "green", "red"]
-    )
-    st.session_state["c"] = c
+    # here was supposed to be a waterfall chart of score progression, that was supposed to be achived by calculating a offset from previous cumsum and new cumsum 
+    # but I also need to flip the sing of certain values for the stack to apper correcty, and for that I need to know the direction I come from.
+    # all would have been so easy if only I could have -0, but alas everything just exploded into bloat
+    # yes, i know waterfall charts are within streamlit, but outside of my personal library knowledge
 
 with game_tab:
     st.write("Select Game:")
