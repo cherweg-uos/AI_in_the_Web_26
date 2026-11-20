@@ -3,8 +3,7 @@ import pandas as pd
 from openai import OpenAI, AuthenticationError, OpenAIError
 import base64
 import os
-import time
-import math
+
 
 st.set_page_config(layout="wide")
 

@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from statistics import mean
 
 #gibt oben beim tab den Namen #nope gibt einfach nur überschrift, name ist in main.py
 st.header("Statistics")
@@ -19,7 +20,7 @@ total_results_df = pd.DataFrame(
         "Total Wins": sum(results_df["Wins"]),
         "Total Losses": sum(results_df["Losses"]),
         "Games Played": len(st.session_state["game_dfs"]),
-        "Avg. Questions per Game": numpy.average([g_df["Question #"].iloc[-1] for g_df in st.session_state["game_dfs"]]),
+        "Avg. Questions per Game": mean([g_df["Question #"].iloc[-1] for g_df in st.session_state["game_dfs"]]),
     }
 )
 
