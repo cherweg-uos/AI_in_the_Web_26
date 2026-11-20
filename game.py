@@ -115,6 +115,7 @@ for message in st.session_state["messages"]:
         st.markdown(message["content"])
 
 # welcome message write stream if ther is no message history
+##- Ai config 
 if not st.session_state["messages"]: # if there is nothing in chat history
     with chat_container.chat_message("assistant"):
         welcome_message = st.write_stream(stream_text("""
