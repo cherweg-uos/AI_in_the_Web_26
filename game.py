@@ -113,6 +113,7 @@ for message in st.session_state["messages"]:
     with chat_container.chat_message(message["role"]):
         st.markdown(message["content"])
 
+##- Ai config 
 if not st.session_state["messages"]: # if there is nothing in chat history
     with chat_container.chat_message("assistant"):
         welcome_message = st.write_stream(stream_text("""
