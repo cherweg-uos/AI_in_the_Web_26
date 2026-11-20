@@ -27,8 +27,6 @@ def game_reset() -> None:
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
-#speicher von base64 image 
-base64_image = encode_image(image_path)
 
 # function to convert text into word stream
 def stream_text(text: str):
@@ -132,7 +130,8 @@ chat_container.divider()
 
 #image path to use for base64 encoding
 image_path = "cards/" +  sorted(os.listdir("cards"))[st.session_state["number"]]
-
+#speicher von base64 image 
+base64_image = encode_image(image_path)
 
 if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only)", submit_mode="disable"):
     # display prompt in user side chat ubble
