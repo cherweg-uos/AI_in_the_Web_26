@@ -9,9 +9,11 @@ Requirments can be found in requirments.txt
 
 HOW TO RUN ? 
 
-´´´ Python 
+'''
+
 streamlit run main.py
-´´´
+
+'''
 
 OR 
 
