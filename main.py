@@ -7,10 +7,11 @@ import time
 
 st.set_page_config(layout="wide")
 
+# critical infrastructure (probably another multy threading thing but need to investigate details)
 time.sleep(1)
 
-
-## -ai key abfrage und validation
+### -AI Key input (stops everything else from loading)
+# loading various possible AI-Key locations in order
 if "AI_KEY" in st.session_state:
     ai_key = st.session_state["AI_KEY"]
     print("Loaded AI Key from session")
@@ -29,7 +30,7 @@ else:
             st.stop()
 
 print("Checking AI Key validity now")
-
+# checking key valididty by trying to retrive model list with key
 if ("valid_ai_key" not in st.session_state) or (st.session_state["valid_ai_key"] == False):
     with st.spinner("Checking AI Key", show_time=True):
         time.sleep(0.1)
@@ -68,47 +69,38 @@ if "cards_base64" not in st.session_state:
             st.session_state["cards_base64"].append(f"data:image/png;base64,{encoded}") #append to list
     print(f'st.session_state["cards_base64"] = DO NOT PRINT BASE 64 IMG DATA YOU STUPID') # this will no longer spam the console
 
-
-
 if "reset" not in st.session_state:
-    st.session_state["reset"] = False
-
-# initialize game statistics
+    st.session_state["reset"] = False # marker for reset message
 if "g_idx" not in st.session_state:
     st.session_state["g_idx"] = 0 # zähler für spielenummer
-
-# initialize data if we don't have history
 if "q_idx" not in st.session_state:
-    st.session_state["q_idx"] = 1
+    st.session_state["q_idx"] = 1 # counter for questio number
     
-
 if "game_dfs" not in st.session_state:
     st.session_state["game_dfs"] = [] # hier gehöre die df's für jeden durchlauf rein
     st.session_state["game_dfs"].append(pd.DataFrame([{"Question #": 0,
                                                         "User Prompt": "",
                                                         "AI Response": "",
-                                                        "Quality of Guess (AI)": "",
-                                                        "Quality of Guess": ""
+                                                        "Quality of Guess (AI)": ""
                                                         }]))
+    
 if "results" not in st.session_state:
-    st.session_state["results"] = [] # liste aller ergebnisse 1 = Win, 0 = Lose
+    st.session_state["results"] = [] # liste aller ergebnisse 1 = Win, 0 = Reset, -1 = Lose
 
-
-# react to clicked image
 if "clicked" not in st.session_state:
-    st.session_state["clicked"] = -1
+    st.session_state["clicked"] = -1 # clicked image
 if "last_guess" not in st.session_state:
-    st.session_state["last_guess"] = None
+    st.session_state["last_guess"] = None # store submmitted guess seperatly
 
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = [] # chat history
 
 #hier wird debug auf False gestellt fals nichts eingetragen ist im session state
 if "debug" not in st.session_state:
     st.session_state["debug"] = False
-#debugtoggel wird definiert und ein toggel wird eingeführt und der state in debug gespeichert
-st.session_state["debug"] = st.sidebar.toggle("Activate Debug", st.session_state["debug"])
 
+# toggle button for debug state
+st.session_state["debug"] = st.sidebar.toggle("Activate Debug", st.session_state["debug"])
 
 #hier werden die 2 Seiten die es gibt zugewiesen
 gamepage = st.Page("game.py", title="Game", icon="🎮")
@@ -119,9 +111,7 @@ if st.session_state["debug"] == True:
     debug = st.Page("debug.py", title="Debug", icon="🚧")
     bug = st.navigation(pages=[gamepage, statspage,debug])
     bug.run()
-
 else: 
-#und hier an den rand gesetzt 
     pg = st.navigation(pages=[gamepage, statspage])
     pg.run()
 

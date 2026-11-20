@@ -1,5 +1,6 @@
 import streamlit as st
 
+# rint content of all session state keys exept base64 data
 for key in st.session_state:
     st.divider()
     st.write(f"{key}:")
