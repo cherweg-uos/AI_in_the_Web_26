@@ -33,7 +33,7 @@ def game_reset() -> None:
     st.session_state["reset"] = True
     st.rerun()
 
-# function to calculate entropy
+# function to calculate global entropy
 def calculate_entropy(p_cards, deck_size=52) -> float:
     n = len(p_cards)
     global_entropy = np.log2(n)
@@ -43,17 +43,18 @@ def calculate_ig(p_cards, deck_size=52) -> float:
     n = len(p_cards)
     p = n / deck_size
     ig = -p * np.log2(p) - (1-p) * np.log2(1-p)
-    return round(ig, 2)
-
-if st.session_state["reset"]:
-    st.info("Game has been Reset")
-    st.session_state["reset"] = False
+    return round(np.nan_to_num(ig), 2)
 
 # function to convert text into word stream
 def stream_text(text: str):
     for word in text.split(" "):
         yield word + " "
         time.sleep(0.05)
+
+
+if st.session_state["reset"]:
+    st.info("Game has been Reset")
+    st.session_state["reset"] = False
 
 # create a new random number if we don't have one yet / und ein knopf wird erstelt 
 resetbuton = st.button("Restart the Game", width="stretch")
@@ -109,9 +110,9 @@ if submitted:
         
 st.divider()
 
+# calculate how much of original entropy is still remaining, and scale by original entropy
 progress = (round(np.log2(52), 2) - st.session_state["game_dfs"][-1]["Global Entropy"].iloc[-1])/round(np.log2(52), 2)
 st.progress(progress, text="Game Progress")
-
 
 st.subheader("Ask a LLM for hints")
 
@@ -128,101 +129,106 @@ if not st.session_state["messages"]: # if there is nothing in chat history
         I am your Game Master for this Card Guessing Game  \n
         I have now selected a random card out of the ones you can see above.  \n
         Your Task is to guess which one it is.  \n
-        You get to ask me 5 Questions rgarding the Target card, which I will then Answer with Yes or No.
+        You get to ask me 6 Questions rgarding the Target card, which I will then Answer with Yes or No.
         """))
     st.session_state["messages"].append({"role": "assistant", "content": welcome_message})
 
 chat_container.divider()
 
-if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only)", submit_mode="disable"):
-    with chat_container.chat_message("user"): # in a user side chat bubble
-        st.markdown(user_prompt) # display the prompt
-    st.session_state["messages"].append({"role": "user", "content": user_prompt}) # Add user_prompt to chat history
-    
-    # generate new system promt
-    system_prompt = f"""
-    You are a strict, infallible referee for a 52-card guessing game.
-    Target Card: {st.session_state["cards_names"][st.session_state["number"]]} ({st.session_state["short_cards_names"][st.session_state["number"]]})
-    Current Remaining Candidates: {st.session_state["p_cards"]}
+if st.session_state["q_idx"] <= 6: # user still under the question limit
+    if user_prompt := st.chat_input("Question to ask: (Responses will be Yes/No only)", submit_mode="disable"):
+        with chat_container.chat_message("user"): # in a user side chat bubble
+            st.markdown(user_prompt) # display the prompt
+        st.session_state["messages"].append({"role": "user", "content": user_prompt}) # Add user_prompt to chat history
+        
+        # generate new system promt
+        system_prompt = f"""
+        You are a strict, infallible referee for a 52-card guessing game.
+        Target Card: {st.session_state["cards_names"][st.session_state["number"]]} ({st.session_state["short_cards_names"][st.session_state["number"]]})
+        Current Remaining Candidates: {st.session_state["p_cards"]}
 
-    Rank values: A=1, 2=2, 3=3, 4=4, 5=5, 6=6, 7=7, 8=8, 9=9, 10=10, J=11, Q=12, K=13.
+        Rank values: A=1, 2=2, 3=3, 4=4, 5=5, 6=6, 7=7, 8=8, 9=9, 10=10, J=11, Q=12, K=13.
 
-    Rules:
-    1. "thought": In exactly 1 short sentence briefly analyze if the Target Card satisfies the user's question. 
-    2. "yn": Must be strictly "Yes" or "No".
-    3. "matching": List all card codes from Current Candidates that satisfy the user's question (e.g. all face cards and cards rank < 3).
-    4. "rem": Short Sarcastic remark. DO NOT any features of the Target Card here.
-    5. "q": Score question quality from 0 to 100 (100 = 50/50 split).
+        Rules:
+        1. "thought": In exactly 1 short sentence briefly analyze if the Target Card satisfies the user's question. 
+        2. "yn": Must be strictly "Yes" or "No".
+        3. "matching": List all card codes from Current Candidates that satisfy the user's question (e.g. all face cards and cards rank < 3).
+        4. "rem": Short Sarcastic remark. DO NOT any features of the Target Card here.
+        5. "q": Score question quality from 0 to 100 (100 = 50/50 split).
 
-    JSON Output Requirements (Mandatory):
-    {{
-      "thought": "<string>",
-      "yn": "Yes" | "No",
-      "matching": ["<card code>", ...],
-      "rem": "<string>",
-      "q": <integer 0-100>
-    }}
-    """
-    # try getting AI response
-    try:
-        with st.spinner("Answer is being created …"):
-            time.sleep(0.5)
-            response = client.chat.completions.create(
-                model="Qwen/Qwen3.8-27B-FP8",
-                messages=[
-                    {"role": "system","content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.0,
-                max_tokens=800
-            )
+        JSON Output Requirements (Mandatory):
+        {{
+        "thought": "<string>",
+        "yn": "Yes" | "No",
+        "matching": ["<card code>", ...],
+        "rem": "<string>",
+        "q": <integer 0-100>
+        }}
+        """
+        # try getting AI response
+        try:
+            with st.spinner("Answer is being created …"):
+                time.sleep(0.5)
+                response = client.chat.completions.create(
+                    model="Qwen/Qwen3.8-27B-FP8",
+                    messages=[
+                        {"role": "system","content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.0,
+                    max_tokens=800
+                )
 
+            # dandling non completet responses
+            if response.choices[0].message.content is None: # no message to display
+                with chat_container.chat_message("assistant"):
+                    ai_response = st.write_stream(stream_text("Great, you broke the AI. Please try again with a differnt Question.  \n Reason: " + response.choices[0].finish_reason))
+                st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
 
-        if response.choices[0].message.content is None: # no message to display
-            with chat_container.chat_message("assistant"):
-                ai_response = st.write_stream(stream_text("Great, you broke the AI. Please try again with a differnt Question.  \n Reason: " + response.choices[0].finish_reason))
-            st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
+            else:
+                # load ai response jsonn
+                ai_data = json.loads(response.choices[0].message.content)
 
-        else:
-            # load ai response jsonn
-            ai_data = json.loads(response.choices[0].message.content)
+                # update relevant game states for next innput 
+                st.session_state["q_idx"] += 1
+                
+                # output response as an asisstant chat bubble
+                with chat_container.chat_message("assistant"):
+                    ai_response = st.write_stream(stream_text(ai_data.get("yn") + "  \n" + ai_data.get("rem")))
+                st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
 
-            # update relevant game states for next innput 
-            st.session_state["q_idx"] += 1
-            
-            # output response as an asisstant chat bubble
-            with chat_container.chat_message("assistant"):
-                ai_response = st.write_stream(stream_text(ai_data.get("yn") + "  \n" + ai_data.get("rem")))
-            st.session_state.messages.append({"role": "assistant", "content": ai_response}) # add ai_response to chat history
+                # debug write full ai response
+                if st.session_state["debug"]:
+                    st.write(ai_data)
 
-            if st.session_state["debug"]:
-                st.write(ai_data)
+                # update possible and impossile cards
+                if ai_data.get("yn") == "Yes":
+                    # if target has property keep only the card in the list that match
+                    st.session_state["p_cards"] = [c for c in st.session_state["p_cards"] if c in set(ai_data.get("matching", []))]
 
-            # update possible and impossile cards
-            if ai_data.get("yn") == "Yes":
-                # if target has property keep only the card in the list that match
-                st.session_state["p_cards"] = [c for c in st.session_state["p_cards"] if c in set(ai_data.get("matching", []))]
+                elif ai_data.get("yn") == "No":
+                    # if target doesn't have property keep only the card in the list that do not match
+                    st.session_state["p_cards"] = [c for c in st.session_state["p_cards"] if c not in set(ai_data.get("matching", []))]
 
-            elif ai_data.get("yn") == "No":
-                #if target doesn't have property remove all matching cards from the list
-                st.session_state["p_cards"] = [c for c in st.session_state["p_cards"] if c not in set(ai_data.get("matching", []))]
+                # log all data in new df
+                new_data = {"Question #": st.session_state["q_idx"],
+                            "User Prompt": user_prompt,
+                            "AI Response": ai_data.get("yn"),
+                            "Global Entropy": calculate_entropy(st.session_state["p_cards"]),
+                            "Information Gain": calculate_ig(st.session_state["p_cards"]),
+                            "Quality of Guess (AI)": ai_data.get("q"),
+                            "Quality of Guess": int(calculate_ig(st.session_state["p_cards"])*100), # 1 bit gain = 100%
+                            "Possible Cards": st.session_state["p_cards"]}
+                new_df = pd.DataFrame([new_data])
 
-            # log all data in new df
-            new_data = {"Question #": st.session_state["q_idx"],
-                        "User Prompt": user_prompt,
-                        "AI Response": ai_data.get("yn"),
-                        "Global Entropy": calculate_entropy(st.session_state["p_cards"]),
-                        "Information Gain": calculate_ig(st.session_state["p_cards"]),
-                        "Quality of Guess (AI)": ai_data.get("q"),
-                        "Quality of Guess": int(calculate_ig(st.session_state["p_cards"])*100), # 1 bit gain = 100%
-                        "Possible Cards": st.session_state["p_cards"]}
-            new_df = pd.DataFrame([new_data])
+                # concateate to corresponding game_dfs (used to just append but pandas no likey)
+                st.session_state["game_dfs"][-1] = pd.concat([st.session_state["game_dfs"][-1], new_df], ignore_index=True)
+                if st.session_state["debug"]:
+                    st.write(st.session_state["game_dfs"][-1])
 
-            # concateate to corresponding game_dfs(used to just append but pandas no likey)
-            st.session_state["game_dfs"][-1] = pd.concat([st.session_state["game_dfs"][-1], new_df], ignore_index=True)
-            if st.session_state["debug"]:
-                st.write(st.session_state["game_dfs"][-1])
+        except AuthenticationError:
+            st.error("API was not accept. Please check it.")
 
-    except AuthenticationError:
-        st.error("API was not accept. Please check it.")
+else:
+    st.error("You have no more Questions remaining.")
