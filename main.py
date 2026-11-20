@@ -8,7 +8,7 @@ import math
 
 st.set_page_config(layout="wide")
 
-time.sleep(1)
+#time.sleep(1)
 
 if "AI_KEY" in st.session_state:
     ai_key = st.session_state["AI_KEY"]
